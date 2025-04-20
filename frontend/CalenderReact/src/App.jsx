@@ -5,7 +5,7 @@ import './App.css'
 
 function App() {
   const [preReg, setPreReg] = useState('No')
-  const [Duration, setDuration] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [name, setName] = useState('')
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
@@ -21,25 +21,25 @@ function App() {
       EventData.End = end
     }
     else {
-      EventData.Duration = Duration
-      EventData.Priority = Priority
+      EventData.Duration = duration
+      EventData.Priority = priority
     }
   }
 
   return (
     <main>
     <h1> Schedule Optimizer</h1>
-      <input
-        type = 'submit'
-        placeholder='Is this a pre-scheduled event? (Yes/No)'
-        value = {preReg}
-        setValue = {(e) => setPreReg(e.target.value)}
-        ></input>
+    <input
+        type="text"
+        placeholder="Is this a pre-scheduled event? (Yes/No)"
+        value={preReg}
+        onChange={(e) => setPreReg(e.target.value)}
+      />
 
-        <button>
+        <button
           type = 'submit'
           onclick = {checkIfRegistered}
-        </button>
+        > Add </button>
         </main>
         
   )
