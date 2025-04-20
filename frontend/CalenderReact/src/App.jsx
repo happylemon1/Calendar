@@ -12,24 +12,23 @@ function App() {
   const [priority,setPriority] = useState('')
   const [weekDay, setWeekDay] = useState('')
 
-  const checkIfRegistered = () => {
-    let EventData = {Name: name}
-  
-    if (preReg.toLowerCase() === 'Yes') {
-      EventData.Start = start
-      EventData.WeekDay = weekDay
-      EventData.End = end
-    }
-    else {
-      EventData.Duration = duration
-      EventData.Priority = priority
+  const [preRegFields, setPreRegFields] = useState(false)
+  const[eventFields,setEventFields] = useState(false)
+
+  const handlePreRegChange = () => {
+    if (preReg.toLocaleLowerCase() === 'yes'){
+      setPreRegFields(true)
+      setEventFields(false)
+    } else {
+      setPreRegFields(false)
+      setEventFields(true)
     }
   }
 
   return (
     <main>
-    <h1> Schedule Optimizer</h1>
-    <input
+      <h1> Schedule Optimizer</h1>
+      <input
         type="text"
         placeholder="Is this a pre-scheduled event? (Yes/No)"
         value={preReg}
@@ -38,10 +37,58 @@ function App() {
 
         <button
           type = 'submit'
-          onclick = {checkIfRegistered}
+          onclick = {handlePreRegChange}
         > Add </button>
+
+        {preRegFields && (
+          <div>
+            <h2> PreScheduled Event Details</h2>
+            <input
+            type = 'submit'
+            placeholder = 'Duration of Event'
+            value = {duration}
+            onChange = {(e) => setDuration(e.target.value)}>
+            </input>
+           
+            <input
+            type = 'number'
+            placeholder = 'Enter Priority (Highest 5, lowest 1)'
+            value = {priority}
+            onChange = {(e) => setPriority(e.target.value)}>
+            </input>
+          </div>
+        )}
+
+        {eventFields && (
+          <div>
+            <input
+            type = 'time'
+            placeholder = 'start Time'
+            value = {start}
+            onChange = {(e) => setStart(e.target.value)}>
+            </input>
+
+            <input
+            type = 'time'
+            placeholder = 'End time'
+            value = {end}
+            onChange = {(e) => setEnd(e.target.value)}>
+            </input>
+
+            <input
+            type = 'text'
+            placeholder = 'Weekday'
+            value = {weekDay}
+            onChange = {(e) => setWeekDay(e.target.value)}>
+            </input>
+
+          </div>
+
+
+        )}
         </main>
-        
+     
+
   )
 
 
