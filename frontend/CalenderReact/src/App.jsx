@@ -7,6 +7,27 @@ function App() {
   const [duration, setDuration] = useState('')
   const [name, setName] = useState('')
   const [priority,setPriority] = useState('')
+  
+  const addEvent = () => {
+    const data = {
+      name: name,
+      duration: Number(duration),
+      priority: Number(priority)
+    }
+    fetch('http://localhost:5000/submitEvent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(err => console.error('Add event failed:', err));
+  
+    // Optional: Clear the form
+    setName('');
+    setDuration('');
+    setPriority('');
+  }
+  
+  const generateSchedule = () => {
+  }
 
   return (
     <main>
@@ -38,16 +59,24 @@ function App() {
         onChange = {(e) => setPriority(e.target.value)}
         />
         </div>
+        <div>
+          <button
+          type = 'button'
+          onClick = {addEvent}
+          > Add Event
+          </button>
+        </div>
         </div>
       <div>
         <button
-          type = 'submit'
+          type = 'button'
+          onClick={generateSchedule}
           > Submit your responses
           </button>
       </div>
 
       </main>
-      )
+        )
       }
         
         
