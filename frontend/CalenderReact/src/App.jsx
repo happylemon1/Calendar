@@ -7,6 +7,9 @@ function App() {
   const [duration, setDuration] = useState('')
   const [name, setName] = useState('')
   const [priority,setPriority] = useState('')
+  // for now I'm just going to use the empty array as a placeholder
+  //until we decide how we want to store it
+  const [schedule,setSchedule] = useState([])
   
   const addEvent = () => {
     const data = {
@@ -27,7 +30,18 @@ function App() {
   }
   
   const generateSchedule = () => {
-  }
+    fetch('http://localhost:5000/generateSchedule',{
+      method:'GET'})
+      .then((response) => response.json())  
+      .then((data) => {
+        // we gotta make a shit ton of edits to display the data we actualyl want to
+        // this is just a placeholder
+        setSchedule(data);  
+      })
+      .catch((error) => {
+        console.error('Error fetching schedule:', error);
+      });
+  };
 
   return (
     <main>
