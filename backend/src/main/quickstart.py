@@ -6,6 +6,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from event import Event
+from datetime import datetime
+from PreReg import PreReg
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
@@ -38,14 +41,18 @@ def main():
     service = build("calendar", "v3", credentials=creds)
 
     # Call the Calendar API
-    now = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    sevenDays = datetime.timedelta(days =7)
+    now_iso = now.isoformat() + 'Z'
+    sevenDays_iso = sevenDays.isoformat() + 'Z'
+
     print("Getting the upcoming 10 events")
     events_result = (
         service.events()
         .list(
             calendarId="primary",
-            timeMin=now,
-            maxResults=10,
+            timeMin=now_iso,
+            timeMax=sevenDays_iso,  # <-- get events *up to* 7 days later
             singleEvents=True,
             orderBy="startTime",
         )
@@ -61,6 +68,21 @@ def main():
     for event in events:
       start = event["start"].get("dateTime", event["start"].get("date"))
       print(start, event.get("summary", "No Title"))
+
+      # let's create a new PreReg event constructor for pre registered events regardless ngl.
+      #This will help us when we use the greedy. Just add until the list of these Events are done
+    start_str = event["start"].get("dateTime", event["start"].get("date"))
+    end_str = event["end"].get("dateTime", event["end"].get("date"))
+    #This is all just converting into a integer format for us.
+    #It's chatted tho so idk how accurate this is, we can just debug using print statements
+    start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+    end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+
+    start_hour = start_dt.hour
+    end_hour = end_dt.hour
+    summary = event.get("summary","no title")
+
+    new_PreReg = PreReg(event.get("summary","no title"), start_hour, end_hour )
 
   except HttpError as error:
     print(f"An error occurred: {error}")
