@@ -1,53 +1,51 @@
 from datetime import datetime
 from event import Event
 
-class Calendar:
-    def __init__(self):
-        # attach an instance‐level list
-        self.events = []
+class CalendarHelper:
+    """
+    A per-day hash-table calendar with fixed-time buckets.
+    Uses datetime slots of SLOT_MINUTES for conflict checking.
+    """
+    SLOT_MINUTES = 15
 
-    def add_event(self, event: Event) -> bool:
-        """Add an Event if it doesn’t conflict; returns True on success."""
-        if self._has_conflict(event):
-            return False
-        self.events.append(event)
-        # keep events sorted by start time
-        self.events.sort(key=lambda e: e.start)
+    def __init__(self):
+        # date -> {slot_start_datetime: Event}
+        self._days: dict[datetime.date, dict[datetime, Event]] = defaultdict(dict)
+        self._slot_delta = timedelta(minutes=self.SLOT_MINUTES)
+
+    def _generate_slots(self, start: datetime, end: datetime):
+        """Yield each slot start between start (inclusive) and end (exclusive)."""
+        cur = start
+        while cur < end:
+            yield cur
+            cur += self._slot_delta
+
+    def can_place(self, start: datetime, end: datetime) -> bool:
+        """Return True if no conflict between start and end on that day."""
+        day_slots = self._days[start.date()]
+        for slot in self._generate_slots(start, end):
+            if slot in day_slots:
+                return False
         return True
 
-    def _has_conflict(self, new_ev: Event) -> bool:
-        """Return True if new_ev overlaps any existing event."""
-        for ev in self.events:
-            # if not (new_ev is entirely before or entirely after ev) → conflict
-            if not (new_ev.end <= ev.start or new_ev.start >= ev.end):
-                return True
-        return False
+    def add_event(self, event: Event) -> bool:
+        """Place event into slots if no conflict. Return True on success."""
+        slots = list(self._generate_slots(event.start, event.end))
+        day_slots = self._days[event.start.date()]
+        # conflict check
+        if any(slot in day_slots for slot in slots):
+            return False
+        # occupy slots
+        for slot in slots:
+            day_slots[slot] = event
+        return True
 
-    def list_events(self):
-        return list(self.events)
-    
-    def _has_conflict(self, new_ev: Event) -> bool:
-        """Checks for any overlap with existing events."""
-        for ev in self.events:
-            # no overlap iff new_ev ends <= ev.start or new_ev.start >= ev.end
-            if not (new_ev.end <= ev.start or new_ev.start >= ev.end):
-                return True
-        return False
-
-    def find_free_slots(self, window_start: datetime, window_end: datetime):
-        """
-        Given a time window, return a list of (start, end) gaps
-        where no events live.
-        """
-        free = []
-        cursor = window_start
-
-        for ev in self.events:
-            if ev.start > cursor:
-                free.append((cursor, ev.start))
-            cursor = max(cursor, ev.end)
-
-        if cursor < window_end:
-            free.append((cursor, window_end))
-
-        return free
+    def list_events(self) -> list[Event]:
+        """Return all scheduled events, sorted by start time."""
+        seen, out = set(), []
+        for day_slots in self._days.values():
+            for ev in day_slots.values():
+                if ev not in seen:
+                    seen.add(ev)
+                    out.append(ev)
+        return sorted(out, key=lambda e: e.start)
