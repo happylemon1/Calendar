@@ -5,14 +5,12 @@ import heapq
 
 class schedule:
 
-    def _init_(self, pre_regs: list[PreReg] = None):
+    def __init__(self):
         self.cal = Calendar()
         self.schedule = [{} for _ in range(7)]
         self.eventList = []
-        if pre_regs: 
-            for pr in pre_regs: 
-                added = self.cal.add_event(pr.to_event())
-    
+        self.preRegEvents = []
+
     def addEvent(self,event):
         heapq.heappush(self.eventList, event)
     
@@ -22,11 +20,23 @@ class schedule:
         else:
             return None
 
-    def addPreRegEvents(self,preRegEvents):
-        self.preRegEvents.append(preRegEvents)
+    def addPreRegEvents(self, preRegEvent):
+        self.preRegEvents.append(preRegEvent)
 
 
-    def createSchedule(self):
+    def preRegAdding(self):
+        while len(self.preRegEvents >0):
+            curr_preReg: PreReg = self.preRegEvents.pop(0)
+            start = curr_preReg.Start_time
+            end = curr_preReg.End_time
+            weekday = curr_preReg.weekday
+            summary = curr_preReg.summary
+            for i in range (start, end):
+                self.schedule[weekday][i] = summary
+
+
+
+    def createSchedule(self) -> dict:
         while len (self.eventList) > 0:  
             event = self.getNextEvent 
 
@@ -40,6 +50,6 @@ class schedule:
                                 isAvailable = False
                         if isAvailable:
                             for j in range (j + event.duration):
-                                this_dict.
+                                isTrue = True
 
                                         

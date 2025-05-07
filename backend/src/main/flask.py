@@ -2,8 +2,9 @@ from flask import Flask,request,jsonify
 app = Flask('Event.py')
 from event import Event
 from schedule import schedule
-schedule = schedule()
+user_schedule = schedule()
 from schedule import generateSchedule
+from quickstart import load_Events_Into
 
 
   
@@ -16,11 +17,16 @@ def getUserEvent():
 
         new_event = Event(Event_Name, Event_Duration, Event_Priority)
 
-        schedule.addEvent(new_event)
+        user_schedule.addEvent(new_event)
         return jsonify({ 'This Event has been submitted'})
         
 @app.route('/generateSchedule', methods = ['POST'])
 def generateSchedule():
         
-       
         return jsonify({"schedule:"})
+
+@app.route('loadPreEvents', methods = ['GET'])
+def loadPreEvents():
+        load_Events_Into(user_schedule)
+        return jsonify({"Your pre registered events have been accounted for"})
+        

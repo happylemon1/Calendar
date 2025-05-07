@@ -9,12 +9,11 @@ from googleapiclient.errors import HttpError
 from event import Event
 from datetime import datetime
 from PreReg import PreReg
-
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 
-def main():
+def load_Events_Into(sched):
   """Shows basic usage of the Google Calendar API.
   Prints the start and name of the next 10 events on the user's calendar.
   """
@@ -69,7 +68,7 @@ def main():
       start = event["start"].get("dateTime", event["start"].get("date"))
       print(start, event.get("summary", "No Title"))
 
-      # let's create a new PreReg event constructor for pre registered events regardless ngl.
+    # let's create a new PreReg event constructor for pre registered events regardless ngl.
       #This will help us when we use the greedy. Just add until the list of these Events are done
     start_str = event["start"].get("dateTime", event["start"].get("date"))
     end_str = event["end"].get("dateTime", event["end"].get("date"))
@@ -77,16 +76,15 @@ def main():
     #It's chatted tho so idk how accurate this is, we can just debug using print statements
     start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
     end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+    weekday_index = start_dt.weekday()
 
-    start_hour = start_dt.hour
-    end_hour = end_dt.hour
+    start_hour = 4 * (start_dt.hour + start_dt.minute / 60)
+    end_hour = 4 * (end_dt.hour + end_dt.minute / 60)
     summary = event.get("summary","no title")
 
-    new_PreReg = PreReg(event.get("summary","no title"), start_hour, end_hour )
+    new_PreReg = PreReg(summary, start_hour, end_hour, weekday_index)
 
+    sched.addPreRegEvents(new_PreReg)
   except HttpError as error:
     print(f"An error occurred: {error}")
 
-
-if __name__ == "__main__":
-  main()
