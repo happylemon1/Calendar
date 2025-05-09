@@ -23,8 +23,6 @@ class schedule:
     def addPreRegEvents(self, preRegEvent):
         self.preRegEvents.append(preRegEvent)
 
-
-<<<<<<< HEAD
     def preRegAdding(self):
         while len(self.preRegEvents >0):
             curr_preReg: PreReg = self.preRegEvents.pop(0)
@@ -36,23 +34,6 @@ class schedule:
                 self.schedule[weekday][i] = summary
 
 
-
-    def createSchedule(self) -> dict:
-        while len (self.eventList) > 0:  
-            event = self.getNextEvent 
-
-            for i in range (len(self.schedule)):
-                dict = self.schedule[i]
-                for j in range(96):
-                    if j not in dict: 
-                        for j in range( j + event.duration):
-                            isAvailable = True
-                            if j in dict:
-                                isAvailable = False
-                        if isAvailable:
-                            for j in range (j + event.duration):
-                                isTrue = True
-=======
     def create_schedule(self) -> list[tuple[Event, int, int]]:
         """
         Attempt to place all queued events into the weekly grid.
@@ -109,6 +90,6 @@ class schedule:
     #                     if isAvailable:
     #                         for j in range (j + event.duration):
     #                             this_dict.
->>>>>>> e96afaaf43bf439c43853c37e4b12f48324ab866
+
 
                                         
