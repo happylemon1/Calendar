@@ -3,7 +3,7 @@ from datetime import datetime
 class Event:
     def __init__(self, name, duration, priority):
         self.name = name
-        self.duration =  4 * duration
+        self.duration =  duration * 4
         self.priority = priority
 
     def to_dict(self):
