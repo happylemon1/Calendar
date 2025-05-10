@@ -19,4 +19,4 @@ class Event:
         return self.priority < other.priority
 
     def __repr__(self):
-        return f"<Event {self.name!r} {self.start.isoformat()}–{self.end.isoformat()}>"
+        return f"<Event {self.name!r} {self.priority}–{self.duration}>"

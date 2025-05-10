@@ -23,6 +23,7 @@ def getUserEvent():
 @app.route('/generateSchedule', methods = ['POST'])
 def generateSchedule():
         
+        
         return jsonify({"schedule:"})
 
 @app.route('loadPreEvents', methods = ['GET'])

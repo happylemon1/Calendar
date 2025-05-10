@@ -1,20 +1,26 @@
 from datetime import datetime
-from event import Event
-from calendar import Calendar
+from event import Event as e
+from schedule import schedule as sc
 
-cal = Calendar()
 
-e1 = Event("Write report", 
-           start=datetime.fromisoformat("2025-04-20T09:00"), 
-           end=datetime.fromisoformat("2025-04-20T10:30"))
+def main():
+    event1 = e("Running", 1, 1)
+    event2 = e("Studying", 8, 3)
+    event3 = e("Football", 1, 2)
+    schedule = sc()
+    schedule.addEvent(event1)
+    schedule.addEvent(event2)
+    schedule.addEvent(event3)
+    
 
-if cal.add_event(e1):
-    print("Added:", e1)
-else:
-    print("Conflict, couldn't add", e1)
+    placements = schedule.createSchedule()
 
-print("All events:", cal.list_events())
-print("Free between 8–12:", cal.find_free_slots(
-    window_start=datetime(2025,4,20,8,0),
-    window_end=datetime(2025,4,20,12,0)
-))
+    dict = schedule.list_weekly()
+    print(dict)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
