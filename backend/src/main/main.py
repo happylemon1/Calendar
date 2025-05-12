@@ -5,7 +5,7 @@ from schedule import schedule as sc
 
 def main():
     event1 = e("Running", 4, 1)
-    event2 = e("Studying", 8, 3)
+    event2 = e("Studying", 8, 4)
     event3 = e("Football", 1, 2)
     schedule = sc()
     schedule.addEvent(event1)
