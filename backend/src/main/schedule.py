@@ -1,12 +1,9 @@
 from event import Event
 from PreReg import PreReg
-from calendar_helper import Calendar
 import heapq
 
 class schedule:
-
     def __init__(self):
-        self.cal = Calendar()
         self.schedule = [{} for _ in range(7)]
         self.eventList = []
         self.preRegEvents = []
@@ -41,8 +38,8 @@ class schedule:
         """
         placements = []
         # Process until queue is empty
-        while self.event_list:
-            event = self.get_next_event()
+        while self.eventList:
+            event = self.getNextEvent()
             placed = False
             # Try each day of week
             for day_idx, day_slots in enumerate(self.schedule):
@@ -72,19 +69,20 @@ class schedule:
         return {day: slots.copy() for day, slots in enumerate(self.schedule)}
 
     def __repr__(self):
-        return f"<Schedule events_in_queue={len(self.event_list)} weekslots=7>"
+        return f"<Schedule events_in_queue={len(self.eventList)} weekslots=7>"
 
     
-    # def createSchedule(self):
-    #     while len (self.eventList) > 0:  
-    #         event = self.getNextEvent 
-
+    # def createSchedule(self) -> list[tuple[Event, int, int]]:
+    #     placements = []
+    #     while len(self.eventList) > 0:  
+    #         event = self.getNextEvent()
+    #         isAvailable = True
     #         for i in range (len(self.schedule)):
     #             dict = self.schedule[i]
-    #             for j in range(96):
+    #             maxStart = 96 - event.duration
+    #             for j in range(maxStart):
     #                 if j not in dict: 
-    #                     for j in range( j + event.duration):
-    #                         isAvailable = True
+    #                     for j in range(j + event.duration):
     #                         if j in dict:
     #                             isAvailable = False
     #                     if isAvailable:

@@ -1,4 +1,4 @@
-from datetime import Datetime
+from datetime import datetime
 from event import Event
 
 class PreReg:
