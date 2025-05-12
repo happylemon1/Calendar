@@ -5,7 +5,7 @@ from schedule import schedule
 user_schedule = schedule()
 from schedule import generateSchedule
 from quickstart import load_Events_Into
-
+from convert import convert
 
   
 @app.route('/submitEvent', methods = ['GET'])
@@ -22,8 +22,11 @@ def getUserEvent():
         
 @app.route('/generateSchedule', methods = ['POST'])
 def generateSchedule():
-        
-        
+        user_schedule.sleepAdding()
+        user_schedule.preRegAdding()
+        schedule_dictionary: dict = user_schedule.createSchedule
+        #Now that we have the schedule_dictionary we need to create a method to create events and post it from that
+        #We should probably also consider adding something for sleep or something???
         return jsonify({"schedule:"})
 
 @app.route('loadPreEvents', methods = ['GET'])

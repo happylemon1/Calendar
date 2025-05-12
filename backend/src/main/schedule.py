@@ -87,5 +87,3 @@ class schedule:
     #   while len (self.eventList ) > 0
     #       for i in range(96)
     
-
-                                        
