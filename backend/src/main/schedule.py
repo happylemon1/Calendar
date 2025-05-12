@@ -20,22 +20,12 @@ class schedule:
     def addPreRegEvents(self, preRegEvent):
         self.preRegEvents.append(preRegEvent)
 
-    def preRegAdding(self):
-        while len(self.preRegEvents >0):
-            curr_preReg: PreReg = self.preRegEvents.pop(0)
-            start = curr_preReg.Start_time
-            end = curr_preReg.End_time
-            weekday = curr_preReg.weekday
-            summary = curr_preReg.summary
-            for i in range (start, end):
-                self.schedule[weekday][i] = summary
 
-
-    def create_schedule(self) -> list[tuple[Event, int, int]]:
-        """
-        Attempt to place all queued events into the weekly grid.
-        Returns a list of tuples (event, day_index, start_slot).
-        """
+    def createSchedule(self) -> list[tuple[Event, int, int]]:
+    #     """
+    #     Attempt to place all queued events into the weekly grid.
+    #     Returns a list of tuples (event, day_index, start_slot).
+    #     """
         placements = []
         # Process until queue is empty
         while self.eventList:
@@ -87,7 +77,13 @@ class schedule:
     #                             isAvailable = False
     #                     if isAvailable:
     #                         for j in range (j + event.duration):
-    #                             this_dict.
+    #                             dict[j] = event.name
+    #                         placements.append((event, i, event.duration))
+    #                         break
+    #     return placements
 
-
-                                        
+    # def createSchedule(self):
+    # placements = []
+    #   while len (self.eventList ) > 0
+    #       for i in range(96)
+    
