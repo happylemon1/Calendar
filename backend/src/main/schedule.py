@@ -69,7 +69,7 @@ class schedule:
     #     """
     #     Attempt to place all queued events into the weekly grid.
     #     Returns a list of tuples (event, day_index, start_slot).
-    #     """
+    #     """l
         placements = []
         # Process until queue is empty
         while self.eventList:

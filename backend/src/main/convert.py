@@ -4,6 +4,7 @@ from schedule import schedule
 from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
 from googleapiclient.discovery import build 
+
 class convert:
     def __init__(self, listOfStuff: list[tuple[Event,int, int]] ):
         while len(listOfStuff) > 0:
@@ -38,5 +39,5 @@ class convert:
             },
 
 
-event = service.events().insert(calendarId='primary', body=event).execute()
-print 'Event created: %s' % (event.get('htmlLink'))
+            event = service.events().insert(calendarId='primary', body=event).execute()
+            print 'Event created: %s' % (event.get('htmlLink'))
