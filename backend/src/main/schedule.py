@@ -20,6 +20,50 @@ class schedule:
     def addPreRegEvents(self, preRegEvent):
         self.preRegEvents.append(preRegEvent)
 
+    def sleepAdding(self):
+        for i in range (len(self.schedule)):
+            for j in range (0,24):
+                self.schedule[i][j] = 'sleep'
+            for j in range (88, 96):
+                self.schedule[i][j] = 'sleep'
+
+    def preRegEventsAdding(self):
+        while len(self.preRegEvents):
+            isAvail = True
+            event: PreReg = self.preRegEvents.pop(0)
+            weekday = event.weekday
+            start = event.Start_time
+            end = event.End_time
+            summary = event.summary
+            for j in range(start, end):
+                if j in self.schedule[weekday]:
+                    self.sleepConflict(event)
+                    break
+            for j in range(start, end):
+                self.schedule[weekday][j] = summary
+
+   # We need to do something about if there is a PreReg Event that occurs durinf
+   # The sleep period
+   #Some sort of schedule conflict method
+
+    def sleepConflict(self, event):
+        count = 0
+        thisEvent: PreReg = event
+        start = thisEvent.Start_time
+        end = thisEvent.End_time
+        weekday = thisEvent.weekday
+
+        for j in range (start, end):
+            if j in self.schedule[weekday]:
+                del self.schedule[weekday][j]
+                count = count + 1
+        if count > 0:
+            thisEvent: Event = Event("nap", count, 6)
+            self.addEvent(thisEvent)
+        
+        
+                
+
 
     def createSchedule(self) -> list[tuple[Event, int, int]]:
     #     """
