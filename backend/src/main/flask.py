@@ -24,7 +24,8 @@ def getUserEvent():
 def generateSchedule():
         user_schedule.sleepAdding()
         user_schedule.preRegAdding()
-        schedule_dictionary: dict = user_schedule.createSchedule
+        schedule_list: list = user_schedule.createSchedule()
+        
         #Now that we have the schedule_dictionary we need to create a method to create events and post it from that
         #We should probably also consider adding something for sleep or something???
         return jsonify({"schedule:"})

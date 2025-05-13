@@ -10,7 +10,7 @@ from event import Event
 from datetime import datetime
 from PreReg import PreReg
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def load_Events_Into(sched):

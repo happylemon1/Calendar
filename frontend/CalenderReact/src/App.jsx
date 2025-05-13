@@ -86,7 +86,7 @@ function App() {
           type = 'button'
           onClick={generateSchedule}
           > Submit your responses
-          </button>
+          </button>  
       </div>
       
       </main>
@@ -94,7 +94,7 @@ function App() {
       }
         
         
-     
+         
 
   
 
