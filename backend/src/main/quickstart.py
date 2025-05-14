@@ -89,3 +89,7 @@ def load_Events_Into(sched):
   except HttpError as error:
     print(f"An error occurred: {error}")
 
+if __name__ == "__main__":
+    from schedule import schedule
+    user_sched = schedule()
+    load_Events_Into(user_sched)
