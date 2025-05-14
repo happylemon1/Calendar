@@ -77,6 +77,8 @@ class schedule:
             placed = False
             # Try each day of week
             for day_idx, day_slots in enumerate(self.schedule):
+
+                
                 # Slot indices 0..95
                 max_start = 96 - event.duration
                 for start in range(0, max_start + 1):

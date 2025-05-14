@@ -70,21 +70,22 @@ def load_Events_Into(sched):
 
     # let's create a new PreReg event constructor for pre registered events regardless ngl.
       #This will help us when we use the greedy. Just add until the list of these Events are done
-    start_str = event["start"].get("dateTime", event["start"].get("date"))
-    end_str = event["end"].get("dateTime", event["end"].get("date"))
-    #This is all just converting into a integer format for us.
-    #It's chatted tho so idk how accurate this is, we can just debug using print statements
-    start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-    end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
-    weekday_index = start_dt.weekday()
+      start_str = event["start"].get("dateTime", event["start"].get("date"))
+      end_str = event["end"].get("dateTime", event["end"].get("date"))
+      #This is all just converting into a integer format for us.
+      #It's chatted tho so idk how accurate this is, we can just debug using print statements
+      start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+      end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+      weekday_index = start_dt.weekday()
 
-    start_hour = 4 * (start_dt.hour + start_dt.minute / 60)
-    end_hour = 4 * (end_dt.hour + end_dt.minute / 60)
-    summary = event.get("summary","no title")
+      start_hour = 4 * (start_dt.hour + start_dt.minute / 60)
+      end_hour = 4 * (end_dt.hour + end_dt.minute / 60)
+      summary = event.get("summary","no title")
 
-    new_PreReg = PreReg(summary, start_hour, end_hour, weekday_index)
+      new_PreReg = PreReg(summary, start_hour, end_hour, weekday_index)
 
-    sched.addPreRegEvents(new_PreReg)
+      sched.addPreRegEvents(new_PreReg)
+
   except HttpError as error:
     print(f"An error occurred: {error}")
 

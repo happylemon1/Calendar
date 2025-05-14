@@ -30,7 +30,7 @@ function App() {
   }
   
   const generateSchedule = () => {
-    fetch('http://localhost:5000/generateSchedule',{
+    fetch('http://localhost:5173/generateSchedule',{
       method:'GET'})
       .then((response) => response.json())  
       .then((data) => {

@@ -1,69 +1,162 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Typography */
+  --font-sans: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --base-size: 1rem;
+  --scale-ratio: 1.25;
+  --line-height: 1.6;
 
-  color-scheme: light dark;
-  color: greenyellow;
-  background-color: #242424;
+  /* Color Palette */
+  --primary: #646cff;
+  --primary-hover: #535bf2;
+  --text: hsl(210, 12%, 98%);
+  --bg: hsl(210, 12%, 12%);
+  --surface: hsl(210, 12%, 16%);
+  --border: hsl(210, 12%, 24%);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+
+  /* Transitions */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 200ms var(--ease);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Reset & Global */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-a:hover {
-  color: #535bf2;
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--base-size);
+  line-height: var(--line-height);
+  color-scheme: dark light;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
 body {
-  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
   display: flex;
   place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: greenyellow;
+  padding: 2rem;
 }
 
+/* Headings */
 h1 {
-  font-size: 3.2em;
+  font-size: calc(var(--base-size) * var(--scale-ratio) * var(--scale-ratio));
   line-height: 1.1;
+  margin-bottom: 1rem;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+/* Links */
+a {
+  color: var(--primary);
   font-weight: 500;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover,
+a:focus {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* Buttons */
+button {
   font-family: inherit;
-  background-color: #1a1a1a;
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 500;
+
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75em 1.5em;
+
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 button:hover {
-  border-color: #646cff;
+  background-color: var(--border);
+  box-shadow: var(--shadow-md);
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+button:focus {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
 }
 
+/* Form Controls: inputs, textareas, selects */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75em 1em;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  width: 100%;
+  max-width: 100%;
+  resize: vertical; /* only textarea will resize vertically */
+}
+
+/* Placeholder styling */
+input::placeholder,
+textarea::placeholder {
+  color: hsl(0, 0%, 60%);
+  opacity: 1; /* override default opacity */
+}
+
+/* Focus state */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.3);
+}
+
+/* Disabled state */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Autofill override (WebKit) */
+input:-webkit-autofill {
+  background-color: var(--surface) !important;
+  box-shadow: 0 0 0px 1000px var(--surface) inset;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+/* Light mode overrides */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+    --text: hsl(210, 12%, 12%);
+    --bg: hsl(0, 0%, 98%);
+    --surface: hsl(0, 0%, 100%);
+    --border: hsl(210, 12%, 85%);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.06);
   }
 }
