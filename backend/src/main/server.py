@@ -1,10 +1,71 @@
-from flask import Flask,request,jsonify
+import os
+from flask import Flask,request,jsonify, session, redirect, url_for
 app = Flask(__name__)
 from event import Event
 from schedule import schedule
 user_schedule = schedule()
 from quickstart import load_Events_Into
 from convert import convert, service
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials      import Credentials
+from google.auth.transport.requests import Request
+from googleapiclient.discovery      import build
+from convert import sched_to_calender
+SCOPES = ['https://www.googleapis.com/auth/calender.events']
+CLIENT_SECRETS = 'credentials.json'
+app.secret-key = os.urandom(24)
+
+@app.route('/authorize')
+def authorize():
+        flow = Flow.from_client_secrets_file(
+                'credentials.json', 
+                scopes=SCOPES,
+                redirect_uri=url_for('oauth2callback', _external=True)
+        )
+        auth_url, state = flow.authorization_url(
+        access_type='offline', 
+        include_granted_scopes='true'
+        )
+        session['oauth_state'] = state
+        return redirect(auth_url)
+
+@app.route('/oauth2callback')
+def oauth2callback():
+    state = session.pop('oauth_state', None)
+    flow = Flow.from_client_secrets_file(
+        'credentials.json', 
+        scopes=SCOPES,
+        state=state,
+        redirect_uri=url_for('oauth2callback', _external=True)
+    )
+    flow.fetch_token(authorization_response=request.url)
+    creds = flow.credentials
+    session['credentials'] = {
+        'token': creds.token,
+        'refresh_token': creds.refresh_token,
+        'token_uri': creds.token_uri,
+        'client_id': creds.client_id,
+        'client_secret': creds.client_secret,
+        'scopes': creds.scopes
+    }
+    return redirect(url_for('index'))
+
+def get_user_calendar_service():
+    data = session.get('credentials')
+    if not data:
+        return None
+    creds = Credentials(
+        data['token'],
+        refresh_token=data['refresh_token'],
+        token_uri=data['token_uri'],
+        client_id=data['client_id'],
+        client_secret=data['client_secret'],
+        scopes=data['scopes']
+    )
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        session['credentials']['token'] = creds.token
+    return build('calendar','v3',credentials=creds)
 
   
 @app.route('/submitEvent', methods = ['POST'])
@@ -21,17 +82,21 @@ def getUserEvent():
         
 @app.route('/generateSchedule', methods = ['GET'])
 def generateSchedule():
-        loadPreEvents()
+        service = get_user_calendar_service()
+        if not service:
+              return redirect(url_for('authorize'))
+        load_Events_Into(user_schedule,service)
         user_schedule.sleepAdding()
-        user_schedule.preRegAdding()
-        schedule_list: list = user_schedule.createSchedule()
-        converter = convert(schedule_list, service)
-        #Now that we have the schedule_dictionary we need to create a method to create events and post it from that
-        #We should probably also consider adding something for sleep or something???
-        return jsonify({"schedule:"})
+        user_schedule.preRegEventsAdding()
+        schedule_list = user_schedule.createSchedule()
+        sched_to_calender(schedule_list,service)
+        return jsonify({'status: schedule has been imported'})
 
-@app.route('loadPreEvents', methods = ['GET'])
+@app.route('/loadPreEvents', methods = ['GET'])
 def loadPreEvents():
         load_Events_Into(user_schedule)
         return jsonify({"Your pre registered events have been accounted for"})
-        
+
+if __name__ == '__main__':
+    # listen on all interfaces, port 5000, with live-reload turned on
+    app.run(host='0.0.0.0', port=5000, debug=True)

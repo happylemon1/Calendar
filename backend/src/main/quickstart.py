@@ -13,7 +13,7 @@ from PreReg import PreReg
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
-def load_Events_Into(sched):
+def load_Events_Into(sched, service):
   """Shows basic usage of the Google Calendar API.
   Prints the start and name of the next 10 events on the user's calendar.
   """

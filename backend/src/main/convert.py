@@ -27,8 +27,7 @@ if not creds or not creds.valid:
 
 service = build('calendar', 'v3', credentials=creds)
 
-class convert:
-    def __init__(self, listOfStuff: list[tuple[Event,int, int]], service: Resource ):
+def sched_to_calender(self, listOfStuff: list[tuple[Event,int, int]], service: Resource ):
         while len(listOfStuff) > 0:
             event_tuple = listOfStuff.pop(0)
             event, day_index, slot_index = event_tuple

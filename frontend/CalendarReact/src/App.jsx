@@ -30,7 +30,7 @@ function App() {
   }
   
   const generateSchedule = () => {
-    fetch('http://localhost:5173/generateSchedule',{
+    fetch('http://localhost:5000/generateSchedule',{
       method:'GET'})
       .then((response) => response.json())  
       .then((data) => {
@@ -48,6 +48,15 @@ function App() {
       <div id = 'user_Inputs'>
       <h1> Schedule Optimizer</h1>
       <div>
+
+      <div>
+        <button
+          className="user_auth"
+          onClick={() => window.location.href = 'http://localhost:5000/authorize'}
+        >
+          Sign in with Google
+        </button>
+      </div>
       <input
         type="text"
         placeholder="Name of the event"
