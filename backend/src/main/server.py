@@ -39,7 +39,7 @@ def authorize():
                 'credentials.json', 
                 scopes=SCOPES,
                 # redirect_uri=url_for('oauth2callback', _external=True)
-                redirect_uri = 'http://localhost:8000/oauth2callback'
+                redirect_uri = 'https://localhost:8000/oauth2callback'
         )
         auth_url, state = flow.authorization_url(
         access_type='offline', 
@@ -56,7 +56,7 @@ def oauth2callback():
         scopes=SCOPES,
         state=state,
         # redirect_uri=url_for('oauth2callback', _external=True)
-        redirect_uri = 'http://localhost:8000/oauth2callback'
+        redirect_uri = 'https://localhost:8000/oauth2callback'
     )
     flow.fetch_token(authorization_response=request.url)
     creds = flow.credentials
@@ -105,7 +105,7 @@ def getUserEvent():
 def generateSchedule():
         service = get_user_calendar_service()
         if not service:
-              return redirect(url_for('authorize'))
+            return redirect(url_for('authorize'))
         load_Events_Into(user_schedule,service)
         user_schedule.sleepAdding()
         user_schedule.preRegEventsAdding()
@@ -121,4 +121,4 @@ def loadPreEvents():
 if __name__ == '__main__':
     # listen on all interfaces, port 8000, with live-reload turned on
     app.config['SERVER_NAME'] = 'localhost:8000'
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True, ssl_context='adhoc')

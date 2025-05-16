@@ -30,7 +30,7 @@ function App() {
       duration: Number(duration),
       priority: Number(priority)
     }
-    fetch('http://localhost:8000/submitEvent', {
+    fetch('https://localhost:8000/submitEvent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -43,7 +43,7 @@ function App() {
   }
   
   const generateSchedule = () => {
-    fetch('http://localhost:8000/generateSchedule',{
+    fetch('https://localhost:8000/generateSchedule',{
       method:'GET'})
       .then((response) => response.json())  
       .then((data) => {
@@ -65,7 +65,7 @@ function App() {
       <div>
         <button
           className="user_auth"
-          onClick={() => window.location.href = 'http://localhost:8000/authorize'}
+          onClick={() => window.location.href = 'https://localhost:8000/authorize'}
         >
           Sign in with Google
         </button>
