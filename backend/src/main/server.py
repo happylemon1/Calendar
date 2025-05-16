@@ -2,6 +2,7 @@ import os
 from flask import Flask,request,jsonify, session, redirect, url_for
 from flask_cors import CORS
 app = Flask(__name__)
+CORS(app)
 from event import Event
 from schedule import schedule
 user_schedule = schedule()
@@ -98,7 +99,7 @@ def getUserEvent():
         new_event = Event(Event_Name, Event_Duration, Event_Priority)
 
         user_schedule.addEvent(new_event)
-        return jsonify({ 'This Event has been submitted'})
+        return jsonify({ 'message': 'This Event has been submitted'}), 200
         
 @app.route('/generateSchedule', methods = ['GET'])
 def generateSchedule():

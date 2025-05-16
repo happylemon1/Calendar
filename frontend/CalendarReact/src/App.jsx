@@ -30,7 +30,7 @@ function App() {
       duration: Number(duration),
       priority: Number(priority)
     }
-    fetch('http://localhost:5000/submitEvent', {
+    fetch('http://localhost:8000/submitEvent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -43,7 +43,7 @@ function App() {
   }
   
   const generateSchedule = () => {
-    fetch('http://localhost:5000/generateSchedule',{
+    fetch('http://localhost:8000/generateSchedule',{
       method:'GET'})
       .then((response) => response.json())  
       .then((data) => {
@@ -86,7 +86,7 @@ function App() {
         onChange = {(e) => setDuration(e.target.value)} 
         />
         </div>
-        
+
       <div>
       <input
         type = 'number'
