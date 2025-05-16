@@ -20,7 +20,7 @@ app.secret_key = os.urandom(24)
 # allow the React dev server (localhost:5000) to share cookies
 CORS(app,
      supports_credentials=True,
-     resources={r"/*": {"origins": "http://localhost:5173"}})
+     resources={r"/*": {"origins": "http://localhost:5000"}})
 
 # make sure the session cookie can be sent cross-site
 app.config.update(
@@ -69,7 +69,7 @@ def oauth2callback():
         'scopes': creds.scopes
     }
     # return redirect(url_for('index'))
-    return redirect('http://localhost:5173/')
+    return redirect('http://localhost:5000/')
 
 def get_user_calendar_service():
     data = session.get('credentials')
@@ -119,6 +119,6 @@ def loadPreEvents():
         return jsonify({"Your pre registered events have been accounted for"})
 
 if __name__ == '__main__':
-    # listen on all interfaces, port 5000, with live-reload turned on
+    # listen on all interfaces, port 8000, with live-reload turned on
     app.config['SERVER_NAME'] = 'localhost:8000'
     app.run(host='0.0.0.0', port=8000, debug=True)
