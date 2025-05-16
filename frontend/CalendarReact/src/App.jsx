@@ -4,12 +4,25 @@ import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
+  const[loggedIn, setLoggedIn] = useState(false);
   const [duration, setDuration] = useState('')
   const [name, setName] = useState('')
   const [priority,setPriority] = useState('')
   // for now I'm just going to use the empty array as a placeholder
   //until we decide how we want to store it
   const [schedule,setSchedule] = useState([])
+
+  // TLDR; need to adjust frontend as well to check login status somehow. 
+  /*
+  useEffect(() => {
+    fetch('http://localhost:8000/status', {
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => setLoggedIn(data.logged_in))
+      .catch(err => console.error('Status fetch failed:', err));
+  }, []);
+  */
   
   const addEvent = () => {
     const data = {
@@ -52,7 +65,7 @@ function App() {
       <div>
         <button
           className="user_auth"
-          onClick={() => window.location.href = 'http://localhost:5000/authorize'}
+          onClick={() => window.location.href = 'http://localhost:8000/authorize'}
         >
           Sign in with Google
         </button>
@@ -73,8 +86,8 @@ function App() {
         onChange = {(e) => setDuration(e.target.value)} 
         />
         </div>
-       
-       <div>
+        
+      <div>
       <input
         type = 'number'
         placeholder = 'Event Priority (1-5)'
@@ -101,14 +114,5 @@ function App() {
       </main>
         )
       }
-        
-        
-         
-
-  
-
-
-
- 
 
 export default App

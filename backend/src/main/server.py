@@ -1,26 +1,44 @@
 import os
 from flask import Flask,request,jsonify, session, redirect, url_for
+from flask_cors import CORS
 app = Flask(__name__)
 from event import Event
 from schedule import schedule
 user_schedule = schedule()
 from quickstart import load_Events_Into
-from convert import convert, service
+# from convert import convert, service
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials      import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery      import build
 from convert import sched_to_calender
-SCOPES = ['https://www.googleapis.com/auth/calender.events']
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 CLIENT_SECRETS = 'credentials.json'
-app.secret-key = os.urandom(24)
+app.secret_key = os.urandom(24)
+
+# allow the React dev server (localhost:5000) to share cookies
+CORS(app,
+     supports_credentials=True,
+     resources={r"/*": {"origins": "http://localhost:5173"}})
+
+# make sure the session cookie can be sent cross-site
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=False     # <-- dev only; remove in prod
+)
+
+@app.route('/status')
+def status():
+    svc = get_user_calendar_service()
+    return jsonify({ 'logged_in': bool(svc) })
 
 @app.route('/authorize')
 def authorize():
         flow = Flow.from_client_secrets_file(
                 'credentials.json', 
                 scopes=SCOPES,
-                redirect_uri=url_for('oauth2callback', _external=True)
+                # redirect_uri=url_for('oauth2callback', _external=True)
+                redirect_uri = 'http://localhost:8000/oauth2callback'
         )
         auth_url, state = flow.authorization_url(
         access_type='offline', 
@@ -36,7 +54,8 @@ def oauth2callback():
         'credentials.json', 
         scopes=SCOPES,
         state=state,
-        redirect_uri=url_for('oauth2callback', _external=True)
+        # redirect_uri=url_for('oauth2callback', _external=True)
+        redirect_uri = 'http://localhost:8000/oauth2callback'
     )
     flow.fetch_token(authorization_response=request.url)
     creds = flow.credentials
@@ -48,7 +67,8 @@ def oauth2callback():
         'client_secret': creds.client_secret,
         'scopes': creds.scopes
     }
-    return redirect(url_for('index'))
+    # return redirect(url_for('index'))
+    return redirect('http://localhost:5173/')
 
 def get_user_calendar_service():
     data = session.get('credentials')
@@ -99,4 +119,5 @@ def loadPreEvents():
 
 if __name__ == '__main__':
     # listen on all interfaces, port 5000, with live-reload turned on
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.config['SERVER_NAME'] = 'localhost:8000'
+    app.run(host='0.0.0.0', port=8000, debug=True)
