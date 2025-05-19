@@ -3,8 +3,7 @@ from event import Event
 
 class PreReg:
 
-    def __init__(self, Event_Name, Start_Time, End_Time, weekday, summary):
-        self.Event_Name = Event_Name
+    def __init__(self, summary, Start_Time, End_Time, weekday):
         self.Start_time = Start_Time
         self.End_time = End_Time
         self.weekday = weekday

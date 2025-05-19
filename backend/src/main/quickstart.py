@@ -7,13 +7,15 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from event import Event
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
+from zoneinfo import ZoneInfo
 from PreReg import PreReg
+from schedule import schedule
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
-def load_Events_Into(sched, service):
+def main():
   """Shows basic usage of the Google Calendar API.
   Prints the start and name of the next 10 events on the user's calendar.
   """
@@ -38,20 +40,20 @@ def load_Events_Into(sched, service):
 
   try:
     service = build("calendar", "v3", credentials=creds)
-
+    # now = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     # Call the Calendar API
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
-    sevenDays = datetime.timedelta(days =7)
-    now_iso = now.isoformat() + 'Z'
-    sevenDays_iso = sevenDays.isoformat() + 'Z'
+    tz = ZoneInfo("America/Los_Angeles")
+    # sevenDays = now + timedelta(days =7)
+    #now_iso = now.isoformat() + 'Z'
+    # sevenDays_iso = sevenDays.isoformat() + 'Z'
 
     print("Getting the upcoming 10 events")
     events_result = (
         service.events()
         .list(
             calendarId="primary",
-            timeMin=now_iso,
-            timeMax=sevenDays_iso,  # <-- get events *up to* 7 days later
+            timeMin='2025-01-01T00:00:00Z',
+  # <-- get events *up to* 7 days later
             singleEvents=True,
             orderBy="startTime",
         )
@@ -68,6 +70,7 @@ def load_Events_Into(sched, service):
       start = event["start"].get("dateTime", event["start"].get("date"))
       print(start, event.get("summary", "No Title"))
 
+  
     # let's create a new PreReg event constructor for pre registered events regardless ngl.
       #This will help us when we use the greedy. Just add until the list of these Events are done
       start_str = event["start"].get("dateTime", event["start"].get("date"))
@@ -85,11 +88,10 @@ def load_Events_Into(sched, service):
       new_PreReg = PreReg(summary, start_hour, end_hour, weekday_index)
 
       sched.addPreRegEvents(new_PreReg)
-
+  
   except HttpError as error:
     print(f"An error occurred: {error}")
 
 if __name__ == "__main__":
-    from schedule import schedule
-    user_sched = schedule()
-    load_Events_Into(user_sched)
+    sched = schedule()
+    main()
