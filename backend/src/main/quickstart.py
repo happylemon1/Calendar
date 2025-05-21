@@ -11,11 +11,24 @@ from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
 from PreReg import PreReg
 from schedule import schedule
+from flask import Flask,jsonify, redirect
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
+app = Flask(__name__)
 
-def main():
+@app.route("/apiAuth")
+def apiAuth():
+   flow = InstalledAppFlow.from_client_secrets_file(
+          "credentials.json", SCOPES
+      )
+   creds = flow.run_local_server(port=8000)
+   with open("token.json", "w") as token:
+      token.write(creds.to_json())
+   return redirect("/")
+  
+
+def load_Events_Into(sched) -> dict:
   """Shows basic usage of the Google Calendar API.
   Prints the start and name of the next 10 events on the user's calendar.
   """
@@ -28,15 +41,17 @@ def main():
   # If there are no (valid) credentials available, let the user log in.
   if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
-      creds.refresh(Request())
+      try:
+        creds.refresh(Request())
+        with open("token.json","w") as f:
+          f.write(creds.to_json())
+      except Exception:
+        return {"authenticated": False,
+                "message":"Please sign in to continue."}
     else:
-      flow = InstalledAppFlow.from_client_secrets_file(
-          "credentials.json", SCOPES
-      )
-      creds = flow.run_local_server(port=8080)
-    # Save the credentials for the next run
-    with open("token.json", "w") as token:
-      token.write(creds.to_json())
+      return {"authenticated":False,
+              "message":"Please sign in to continue."}
+    
 
   try:
     service = build("calendar", "v3", credentials=creds)
@@ -62,8 +77,9 @@ def main():
     events = events_result.get("items", [])
 
     if not events:
-      print("No upcoming events found.")
-      return
+      return {"authenticated":True,
+              "message": "No Pre-Registered events were found"}
+      
 
     # Prints the start and name of the next 10 events
     for event in events:
@@ -88,10 +104,21 @@ def main():
       new_PreReg = PreReg(summary, start_hour, end_hour, weekday_index)
 
       sched.addPreRegEvents(new_PreReg)
-  
-  except HttpError as error:
-    print(f"An error occurred: {error}")
+      return {"authenticated":True,
+              "message":"Pre Registered Events Have Been accounted for"}
 
-if __name__ == "__main__":
+
+  except HttpError as error:
+    status = error.resp.status
+    if status in (401,403):
+      return {"authenticated":False,
+              "message": "Authentication expired or not granted"}
+    return {"authenticated":True,
+            "message": "Calender API error ({status}): {error}"}
+
+
+@app.route("/quickStartCall")
+def quickStartCall():
     sched = schedule()
-    main()
+    result = load_Events_Into(sched)
+    return jsonify(result),200

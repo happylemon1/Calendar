@@ -58,7 +58,7 @@ def sched_to_calender(self, listOfStuff: list[tuple[Event,int, int]], service: R
 
             minutes_after_midnight = slot_index * slot_len
             event_time = (datetime.combine(date.min, time()) + 
-                          timedelta(minutes=minutes_after_midnight)).time()
+                        timedelta(minutes=minutes_after_midnight)).time()
             start_dt = datetime.combine(event_date, event_time, tzinfo=tz)
             end_dt = start_dt + timedelta(minutes=duration*15)
 

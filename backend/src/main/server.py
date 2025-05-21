@@ -6,7 +6,7 @@ CORS(app)
 from event import Event
 from schedule import schedule
 user_schedule = schedule()
-from quickstart import load_Events_Into
+# from quickstart import load_Events_Into
 # from convert import convert, service
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials      import Credentials
@@ -16,7 +16,7 @@ from convert import sched_to_calender
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 CLIENT_SECRETS = 'credentials.json'
 app.secret_key = os.urandom(24)
-
+from quickstart import load_Events_Into
 # allow the React dev server (localhost:5000) to share cookies
 CORS(app,
      supports_credentials=True,
@@ -90,7 +90,7 @@ def get_user_calendar_service():
 
   
 @app.route('/submitEvent', methods = ['POST'])
-def getUserEvent():
+def submitEvent():
         user_data = request.get_json()
         Event_Name = user_data.get('name')
         Event_Duration = user_data.get('duration')

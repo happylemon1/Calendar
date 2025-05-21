@@ -30,6 +30,10 @@ function App() {
       duration: Number(duration),
       priority: Number(priority)
     }
+
+    // push onto local stack
+    setSchedule(prev => [ data, ...prev ])
+
     fetch('https://localhost:8000/submitEvent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -107,12 +111,37 @@ function App() {
         <button
           type = 'button'
           onClick={generateSchedule}
-          > Submit your responses
-          </button>  
+          > Generate Schedule
+          </button>
       </div>
-      
-      </main>
-        )
-      }
+
+      {/* render the stack of events */}
+      <section id="event-stack">
+        {schedule.length === 0 ? (
+          <p><em>No events in stack yet. Add one!</em></p>
+        ) : (
+          <table className="event-stack">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Duration</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((evt, idx) => (
+                <tr key={idx}>
+                  <td>{evt.name}</td>
+                  <td>{evt.duration}</td>
+                  <td>{evt.priority}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </main>
+  )
+}
 
 export default App
