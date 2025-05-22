@@ -13,6 +13,8 @@ from google.oauth2.credentials      import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery      import build
 from convert import sched_to_calender
+
+
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 CLIENT_SECRETS = 'credentials.json'
 app.secret_key = os.urandom(24)
@@ -20,7 +22,7 @@ from quickstart import load_Events_Into
 # allow the React dev server (localhost:5000) to share cookies
 CORS(app,
      supports_credentials=True,
-     resources={r"/*": {"origins": "http://localhost:5000"}})
+     resources={r"/*": {"origins": "https://localhost:5000"}})
 
 # make sure the session cookie can be sent cross-site
 app.config.update(
@@ -121,4 +123,4 @@ def loadPreEvents():
 if __name__ == '__main__':
     # listen on all interfaces, port 8000, with live-reload turned on
     app.config['SERVER_NAME'] = 'localhost:8000'
-    app.run(host='0.0.0.0', port=8000, debug=True, ssl_context='adhoc')
+    app.run(host='0.0.0.0', port=8000, debug=True,  ssl_context=('localhost.pem','localhost-key.pem'))
