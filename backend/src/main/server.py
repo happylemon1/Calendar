@@ -11,7 +11,7 @@ user_schedule = schedule()
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials      import Credentials
 from google.auth.transport.requests import Request
-from googleapiclient.discovery      import build
+from googleapiclient.discovery      import build # type: ignore
 from convert import sched_to_calender
 
 
@@ -101,6 +101,7 @@ def submitEvent():
         new_event = Event(Event_Name, Event_Duration, Event_Priority)
 
         user_schedule.addEvent(new_event)
+        print(user_schedule)
         return jsonify({ 'message': 'This Event has been submitted'}), 200
         
 @app.route('/generateSchedule', methods = ['GET'])
