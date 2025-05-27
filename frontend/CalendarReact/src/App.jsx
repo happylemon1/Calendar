@@ -5,13 +5,13 @@ import viteLogo from '/vite.svg'
 import './App.css'
 
 const checkAuthAndMaybeRedirect = () => {
-  fetch('/quickStartCall')
+  fetch('https://localhost:8000/quickStartCall')
     .then(res => res.json())
     .then(json => {
       setLoggedIn(json.authenticated)
       if (!loggedIn) {
         // not signed in → OAuth dance
-        window.location = '/apiAuth';
+        window.location = 'https://localhost:8000/apiAuth';
       } else {
         // already signed in → show events
         setAuth(true);
