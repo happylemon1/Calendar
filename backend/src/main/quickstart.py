@@ -11,13 +11,15 @@ from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
 from PreReg import PreReg
 from schedule import schedule
-from flask import Flask,jsonify, redirect
+from flask import Flask, jsonify, redirect, request
+from google.oauth2.credentials import Credentials as GoogleCredentials
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 app = Flask(__name__)
 
-@app.route("/apiAuth")
+@app.route("/apiAuth", methods = ["POST"])
 def apiAuth():
    flow = InstalledAppFlow.from_client_secrets_file(
           "credentials.json", SCOPES
@@ -28,14 +30,12 @@ def apiAuth():
    return redirect("/")
   
 
-def load_Events_Into(sched) -> dict:
-  """Shows basic usage of the Google Calendar API.
-  Prints the start and name of the next 10 events on the user's calendar.
-  """
-  creds = None
+def load_Events_Into(sched: schedule, creds: Credentials) -> dict:
+  
   # The file token.json stores the user's access and refresh tokens, and is
   # created automatically when the authorization flow completes for the first
   # time.
+
   if os.path.exists("token.json"):
     creds = Credentials.from_authorized_user_file("token.json", SCOPES)
   # If there are no (valid) credentials available, let the user log in.
@@ -68,7 +68,6 @@ def load_Events_Into(sched) -> dict:
         .list(
             calendarId="primary",
             timeMin='2025-01-01T00:00:00Z',
-  # <-- get events *up to* 7 days later
             singleEvents=True,
             orderBy="startTime",
         )
@@ -117,8 +116,36 @@ def load_Events_Into(sched) -> dict:
             "message": "Calender API error ({status}): {error}"}
 
 
-@app.route("/quickStartCall")
-def quickStartCall():
-    sched = schedule()
-    result = load_Events_Into(sched)
-    return jsonify(result),200
+@app.route("/api/events", methods=["POST"])
+def api_events():
+    """
+    Expects JSON { token?: string }.
+    If `token` is provided, builds UserCreds from it and saves token.json.
+    Otherwise falls back to token.json if it exists.
+    Calls load_Events_Into(...) and returns its dict as JSON.
+    """
+    body  = request.get_json(silent=True) or {}
+    token = body.get("token")
+
+    if token:
+        # Build a minimal Credentials from the provided access_token
+        creds = GoogleCredentials(
+            token=token,
+            refresh_token=None,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id="YOUR_CLIENT_ID",
+            client_secret="YOUR_CLIENT_SECRET",
+            scopes=SCOPES
+        )
+        # persist for future calls
+        with open("token.json", "w") as f:
+            f.write(creds.to_json())
+    elif os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    else:
+        creds = None
+
+    sched  = schedule()
+    result = load_Events_Into(sched, creds)
+    result.setdefault("events", [])
+    return jsonify(result), 200
