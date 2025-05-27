@@ -116,8 +116,8 @@ def load_Events_Into(sched: schedule, creds: Credentials) -> dict:
             "message": "Calender API error ({status}): {error}"}
 
 
-@app.route("/api/events", methods=["POST"])
-def api_events():
+@app.route("quickStartCall", methods=["POST"])
+def quickStartCall():
     """
     Expects JSON { token?: string }.
     If `token` is provided, builds UserCreds from it and saves token.json.
