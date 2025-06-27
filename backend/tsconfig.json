@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "commonjs",
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        // Add typeRoots to explicitly tell TypeScript where to look for types
+        "typeRoots": [
+            "./node_modules/@types",
+            "./src" 
+        ]
+    },
+    // The "include" property is great, but we will also add "files" for certainty.
+    // This "files" array FORCES the compiler to include your custom declaration file.
+    "files": [
+    "src/custom.d.ts"
+    ],
+    "include": [
+    "src/**/*"
+    ]
+}
