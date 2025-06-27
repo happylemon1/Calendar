@@ -4,19 +4,19 @@ import './App.css';
 // --- Define Types and Interfaces ---
 
 // This interface defines the expected shape of our component's state
-interface AppState {
-  isAuthenticated: boolean;
-  eventName: string;
-  priority: string;
-  duration: string;
-  pendingEvents: PendingEvent[]; 
-  message: string;
-  lastScheduledEvent: ScheduledEvent | null; 
+type AppState = {
+  isAuthenticated: boolean,
+  eventName: string,
+  priority: string,
+  duration: string,
+  pendingEvents: PendingEvent[], 
+  message: string,
+  lastScheduledEvent: ScheduledEvent | null, 
 }
 
-interface ScheduledEvent {
-  name: string; 
-  startTime: string;
+type ScheduledEvent = {
+  name: string, 
+  startTime: string,
 }
 
 interface PendingEvent {

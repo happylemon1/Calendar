@@ -70,11 +70,11 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
 });
 
 // Define a type for our request body
-interface PendingEvent { 
-    id: number; 
-    name: string; 
-    duration: number; 
-    priority: number; 
+type PendingEvent = { 
+    id: number,
+    name: string, 
+    duration: number, 
+    priority: number,
 }
 
 app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, res: Response) => {
