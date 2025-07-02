@@ -59,6 +59,54 @@ type ScheduleRequest = {
     workDayEnd: string,
 }
 
+const findNextAvailableSlot = (startTime: Date, existingEvents: calendar_v3.Schema$Event[], durationInMinutes: number, workDayStart: string, workDayEnd: string): Date => {
+    let proposedTime = new Date(startTime.getTime());
+    if (proposedTime < new Date()) {
+        proposedTime = new Date(); 
+    }
+
+    const [startHour, startMinute] = workDayStart.split(':').map(Number); 
+    const [endHour, endMinute] = workDayEnd.split(':').map(Number); 
+
+    while (true) {
+        const workDayStartTime = new Date(proposedTime.getTime());
+        workDayStartTime.setHours(startHour, startMinute, 0, 0);
+
+        if (proposedTime < workDayStartTime) {
+            proposedTime = workDayStartTime;
+        }
+
+        const proposedEndTime = new Date(proposedTime.getTime() + durationInMinutes * 60 * 1000);
+
+        const workDayEndTime = new Date(proposedTime.getTime()); 
+        workDayEndTime.setHours(endHour, endMinute, 0, 0); 
+
+        if (proposedEndTime > workDayEndTime) {
+            const nextDay = new Date(proposedTime.getTime()); 
+            nextDay.setDate(nextDay.getDate() + 1); 
+            nextDay.setHours(startHour, startMinute, 0, 0); 
+            proposedTime = nextDay; 
+            continue; 
+        }
+
+        let isSlotFree = true; 
+        for (const event of existingEvents) {
+            if (!event.start?.dateTime || !event.end?.dateTime) continue;
+            const eventStart = new Date(event.start.dateTime);
+            const eventEnd = new Date(event.end.dateTime);
+            if (proposedTime < eventEnd && proposedEndTime > eventStart) {
+                isSlotFree = false;
+                proposedTime = new Date(eventEnd.getTime());
+                break;
+            }
+        }
+
+        if (isSlotFree) {
+            return proposedTime; 
+        }
+    }
+}
+
 // --- API Endpoints ---
 
 app.get('/api/auth', (req: Request, res: Response) => {
@@ -150,54 +198,7 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, ScheduleRequest>,
     }
 });
 
-// pass in the event name
-function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Schema$Event[], durationInMinutes: number, workDayStart: string, workDayEnd: string): Date {
-    let proposedTime = new Date(startTime.getTime());
-    if (proposedTime < new Date()) {
-        proposedTime = new Date(); 
-    }
 
-    const [startHour, startMinute] = workDayStart.split(':').map(Number); 
-    const [endHour, endMinute] = workDayEnd.split(':').map(Number); 
-
-    while (true) {
-        const workDayStartTime = new Date(proposedTime.getTime());
-        workDayStartTime.setHours(startHour, startMinute, 0, 0);
-
-        if (proposedTime < workDayStartTime) {
-            proposedTime = workDayStartTime;
-        }
-
-        const proposedEndTime = new Date(proposedTime.getTime() + durationInMinutes * 60 * 1000);
-
-        const workDayEndTime = new Date(proposedTime.getTime()); 
-        workDayEndTime.setHours(endHour, endMinute, 0, 0); 
-
-        if (proposedEndTime > workDayEndTime) {
-            const nextDay = new Date(proposedTime.getTime()); 
-            nextDay.setDate(nextDay.getDate() + 1); 
-            nextDay.setHours(startHour, startMinute, 0, 0); 
-            proposedTime = nextDay; 
-            continue; 
-        }
-
-        let isSlotFree = true; 
-        for (const event of existingEvents) {
-            if (!event.start?.dateTime || !event.end?.dateTime) continue;
-            const eventStart = new Date(event.start.dateTime);
-            const eventEnd = new Date(event.end.dateTime);
-            if (proposedTime < eventEnd && proposedEndTime > eventStart) {
-                isSlotFree = false;
-                proposedTime = new Date(eventEnd.getTime());
-                break;
-            }
-        }
-
-        if (isSlotFree) {
-            return proposedTime; 
-        }
-    }
-}
 
 
 // --- HTTPS Server Setup ---
