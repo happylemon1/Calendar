@@ -1,25 +1,23 @@
-import React, { Component } from 'react'; // 1. Import Component
+import React, { Component } from 'react';
 import './App.css';
 
 // --- Define Types and Interfaces ---
-
-// This interface defines the expected shape of our component's state
-type PendingEvent = {
-  id: number,
-  name: string,
-  duration: number,
-  priority: number,
+interface PendingEvent {
+  id: number;
+  name: string;
+  duration: number;
+  priority: number;
 }
 
-type AppState = {
-  isAuthenticated: boolean,
-  eventName: string,
-  priority: string,
-  duration: string, 
-  workingHoursStart: string, 
-  workingHoursEnd: string,
-  pendingEvents: PendingEvent[], 
-  message: string,
+interface AppState {
+  isAuthenticated: boolean;
+  eventName: string;
+  priority: string;
+  duration: string;
+  workingHoursStart: string;
+  workingHoursEnd: string;
+  pendingEvents: PendingEvent[];
+  message: string;
 }
 
 class App extends Component<{}, AppState> {
@@ -39,21 +37,20 @@ class App extends Component<{}, AppState> {
   }
 
   componentDidMount() {
-    // Check the page's URL for our ?authenticated=true flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('authenticated') === 'true') {
-      // If the flag is found, update our state. This will trigger a re-render.
       this.setState({ isAuthenticated: true });
-      localStorage.setItem('isAuthenticated', 'true'); 
-      window.history.replaceState({}, document.title, window.location.pathname); 
+      localStorage.setItem('isAuthenticated', 'true');
+
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else {
-      const savedAuthStatus = localStorage.getItem('isAuthenticated'); 
+      const savedAuthStatus = localStorage.getItem('isAuthenticated');
       if (savedAuthStatus === 'true') {
         this.setState({ isAuthenticated: true });
       }
     }
 
-    const savedPendingEvents = localStorage.getItem('pendingEvents'); 
+    const savedPendingEvents = localStorage.getItem('pendingEvents');
     if (savedPendingEvents) {
       this.setState({ pendingEvents: JSON.parse(savedPendingEvents) });
     }
@@ -69,52 +66,77 @@ class App extends Component<{}, AppState> {
     window.location.href = 'https://localhost:8000/api/auth';
   };
 
+  handleLogout = async (logoutMessage: string = 'You have been logged out.') => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('pendingEvents');
+    this.setState({ 
+      isAuthenticated: false, 
+      pendingEvents: [],
+      message: logoutMessage 
+    });
+
+    try {
+      await fetch('https://localhost:8000/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error("Error during server logout:", error);
+    }
+  };
+  
   handleAddEvent = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { eventName, duration, priority, pendingEvents } = this.state; 
+    const { eventName, duration, priority, pendingEvents } = this.state;
+
     if (!eventName || !duration || !priority || Number(duration) <= 0) {
-      this.setState({ message: "Please fill out all event fields and input valid values."})
+      this.setState({ message: "Please fill out all event fields with a valid duration." });
       return;
     }
 
     const newEvent: PendingEvent = {
-      id: Date.now(), 
-      name: eventName, 
-      duration: Number(duration), 
+      id: Date.now(),
+      name: eventName,
+      duration: Number(duration),
       priority: Number(priority),
-    }
+    };
 
     this.setState({
-      pendingEvents: [...pendingEvents, newEvent], 
-      eventName: '', 
-      duration: '', 
-      priority: '', 
-      message: `${newEvent.name} has been added to the queue.`
-    })
-  }
+      pendingEvents: [...pendingEvents, newEvent],
+      eventName: '',
+      duration: '',
+      priority: '',
+      message: `'${newEvent.name}' has been added to the queue.`
+    });
+  };
 
   handleGenerateSchedule = async () => {
     this.setState({ message: 'Generating schedule for all events...' });
 
     try {
       const response = await fetch('https://localhost:8000/api/generate-schedule', {
-        method: 'POST', 
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json', 
-        }, 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           events: this.state.pendingEvents,
           workDayStart: this.state.workingHoursStart,
           workDayEnd: this.state.workingHoursEnd,
         }),
-        credentials: 'include', 
+        credentials: 'include',
       });
 
-      const data = await response.json(); 
+      if (response.status === 401) {
+        this.handleLogout('Your session has expired. Please sign in again.');
+        return; 
+      }
+
+      const data = await response.json();
       if (!response.ok) { throw new Error(data.message || 'An unknown error occurred.'); }
 
       this.setState({
-        pendingEvents: [], 
+        pendingEvents: [],
         message: `Success! ${data.scheduledCount} events have been added to your calendar.`,
       });
 
@@ -130,7 +152,12 @@ class App extends Component<{}, AppState> {
 
     return (
       <main className="container">
-        <h1>Greedy Calendar Optimizer</h1>
+        <div className="header-bar">
+            <h1>Greedy Calendar Optimizer</h1>
+            {isAuthenticated && (
+                <button onClick={() => this.handleLogout()} className="logout-button">Logout</button>
+            )}
+        </div>
         
         {!isAuthenticated ? (
           <div className="card">
@@ -233,14 +260,13 @@ class App extends Component<{}, AppState> {
                     </button>
                 )}
             </div>
-
-            {message && (
-              <div className="card message-box">
-                <h3>Status</h3>
-                <p>{message}</p>
-              </div>
-            )}
           </>
+        )}
+        {message && (
+          <div className="card message-box">
+            <h3>Status</h3>
+            <p>{message}</p>
+          </div>
         )}
       </main>
     );
