@@ -45,6 +45,20 @@ const oauth2Client: Auth.OAuth2Client = new google.auth.OAuth2(
     REDIRECT_URI
 );
 
+// Define a type for our request body
+type PendingEvent = { 
+    id: number,
+    name: string, 
+    duration: number, 
+    priority: number,
+}
+
+type ScheduleRequest = {
+    events: PendingEvent[], 
+    workDayStart: string, 
+    workDayEnd: string,
+}
+
 // --- API Endpoints ---
 
 app.get('/api/auth', (req: Request, res: Response) => {
@@ -69,21 +83,13 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
     }
 });
 
-// Define a type for our request body
-type PendingEvent = { 
-    id: number,
-    name: string, 
-    duration: number, 
-    priority: number,
-}
-
-app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, res: Response) => {
+app.post('/api/generate-schedule', async (req: Request<{}, {}, ScheduleRequest>, res: Response) => {
     if (!req.session.credentials) {
         return res.status(401).json({ message: "User is not authenticated" });
     }
 
     oauth2Client.setCredentials(req.session.credentials); 
-    const pendingEvents = req.body; 
+    const { events, workDayStart, workDayEnd } = req.body; 
     
     try {
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
@@ -99,15 +105,20 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
         });
 
         const allScheduledEvents = calendarEventsResponse.data.items || []; 
-
-        const sortedPendingEvents = pendingEvents.sort((a, b) => b.priority - a.priority); 
-
+        const sortedPendingEvents = events.sort((a, b) => b.priority - a.priority); 
         let scheduledCount = 0; 
 
         for (const eventToSchedule of sortedPendingEvents) {
             const { name, duration } = eventToSchedule; 
 
-            const availableSlotStart = findNextAvailableSlot(now, allScheduledEvents, duration); 
+            const availableSlotStart = findNextAvailableSlot(
+                now, 
+                allScheduledEvents, 
+                duration, 
+                workDayStart, 
+                workDayEnd,
+            );
+
             const availableSlotEnd = new Date(availableSlotStart.getTime() + duration * 60 * 1000); 
 
             const newEvent: calendar_v3.Schema$Event = {
@@ -139,30 +150,52 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
     }
 });
 
-function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Schema$Event[], durationInMinutes: number): Date {
+// pass in the event name
+function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Schema$Event[], durationInMinutes: number, workDayStart: string, workDayEnd: string): Date {
     let proposedTime = new Date(startTime.getTime());
     if (proposedTime < new Date()) {
         proposedTime = new Date(); 
     }
 
-    const minutes = proposedTime.getMinutes(); 
-    const roundedMinutes = Math.ceil(minutes / 15) * 15; 
-    proposedTime.setMinutes(roundedMinutes, 0, 0); 
+    const [startHour, startMinute] = workDayStart.split(':').map(Number); 
+    const [endHour, endMinute] = workDayEnd.split(':').map(Number); 
 
     while (true) {
-        let isSlotFree = true; 
-        const proposedEndTime = new Date(proposedTime.getTime() + durationInMinutes * 60 * 1000);
-        for (const event of existingEvents) {
-            if (!event.start?.dateTime || !event.end?.dateTime) continue; 
-            const eventStart = new Date(event.start.dateTime); 
-            const eventEnd = new Date(event.end.dateTime); 
-            if (proposedTime < eventEnd && proposedEndTime > eventStart) {
-                isSlotFree = false; 
-                proposedTime = new Date(eventEnd.getTime()); 
-                break; 
-            } 
+        const workDayStartTime = new Date(proposedTime.getTime());
+        workDayStartTime.setHours(startHour, startMinute, 0, 0);
+
+        if (proposedTime < workDayStartTime) {
+            proposedTime = workDayStartTime;
         }
-        if (isSlotFree) return proposedTime; 
+
+        const proposedEndTime = new Date(proposedTime.getTime() + durationInMinutes * 60 * 1000);
+
+        const workDayEndTime = new Date(proposedTime.getTime()); 
+        workDayEndTime.setHours(endHour, endMinute, 0, 0); 
+
+        if (proposedEndTime > workDayEndTime) {
+            const nextDay = new Date(proposedTime.getTime()); 
+            nextDay.setDate(nextDay.getDate() + 1); 
+            nextDay.setHours(startHour, startMinute, 0, 0); 
+            proposedTime = nextDay; 
+            continue; 
+        }
+
+        let isSlotFree = true; 
+        for (const event of existingEvents) {
+            if (!event.start?.dateTime || !event.end?.dateTime) continue;
+            const eventStart = new Date(event.start.dateTime);
+            const eventEnd = new Date(event.end.dateTime);
+            if (proposedTime < eventEnd && proposedEndTime > eventStart) {
+                isSlotFree = false;
+                proposedTime = new Date(eventEnd.getTime());
+                break;
+            }
+        }
+
+        if (isSlotFree) {
+            return proposedTime; 
+        }
     }
 }
 
