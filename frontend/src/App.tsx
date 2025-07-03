@@ -1,6 +1,11 @@
 import React, { Component } from 'react';
 import './App.css';
 
+// --- DEPLOYMENT FIX: Define the API URL at the top level ---
+// import.meta.env.PROD is true only when running 'npm run build'
+const isProduction = import.meta.env.PROD;
+const API_BASE_URL = isProduction ? import.meta.env.VITE_API_URL : 'https://localhost:8000';
+
 // --- Define Types and Interfaces ---
 interface PendingEvent {
   id: number;
@@ -20,6 +25,7 @@ interface AppState {
   message: string;
 }
 
+// --- The Class Component ---
 class App extends Component<{}, AppState> {
 
   constructor(props: {}) {
@@ -37,17 +43,22 @@ class App extends Component<{}, AppState> {
   }
 
   componentDidMount() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('authenticated') === 'true') {
-      this.setState({ isAuthenticated: true });
-      localStorage.setItem('isAuthenticated', 'true');
+    // --- DEPLOYMENT FIX: Add a log to see the URL in the browser console ---
+    console.log('Application starting with API_BASE_URL:', API_BASE_URL);
+    if (!API_BASE_URL && isProduction) {
+        console.error("CRITICAL: VITE_API_URL is not defined in the production build!");
+    }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const justAuthenticated = urlParams.get('authenticated') === 'true';
+
+    if (justAuthenticated) {
+      localStorage.setItem('isAuthenticated', 'true');
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const savedAuthStatus = localStorage.getItem('isAuthenticated');
-      if (savedAuthStatus === 'true') {
-        this.setState({ isAuthenticated: true });
-      }
+    }
+
+    if (localStorage.getItem('isAuthenticated') === 'true') {
+      this.setState({ isAuthenticated: true });
     }
 
     const savedPendingEvents = localStorage.getItem('pendingEvents');
@@ -63,26 +74,7 @@ class App extends Component<{}, AppState> {
   }
 
   handleSignIn = () => {
-    window.location.href = 'https://localhost:8000/api/auth';
-  };
-
-  handleLogout = async (logoutMessage: string = 'You have been logged out.') => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('pendingEvents');
-    this.setState({ 
-      isAuthenticated: false, 
-      pendingEvents: [],
-      message: logoutMessage 
-    });
-
-    try {
-      await fetch('https://localhost:8000/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error("Error during server logout:", error);
-    }
+    window.location.href = `${API_BASE_URL}/api/auth`;
   };
   
   handleAddEvent = (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,7 +106,7 @@ class App extends Component<{}, AppState> {
     this.setState({ message: 'Generating schedule for all events...' });
 
     try {
-      const response = await fetch('https://localhost:8000/api/generate-schedule', {
+      const response = await fetch(`${API_BASE_URL}/api/generate-schedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,11 +118,6 @@ class App extends Component<{}, AppState> {
         }),
         credentials: 'include',
       });
-
-      if (response.status === 401) {
-        this.handleLogout('Your session has expired. Please sign in again.');
-        return; 
-      }
 
       const data = await response.json();
       if (!response.ok) { throw new Error(data.message || 'An unknown error occurred.'); }
@@ -152,12 +139,8 @@ class App extends Component<{}, AppState> {
 
     return (
       <main className="container">
-        <div className="header-bar">
-            <h1>Greedy Calendar Optimizer</h1>
-            {isAuthenticated && (
-                <button onClick={() => this.handleLogout()} className="logout-button">Logout</button>
-            )}
-        </div>
+        {/* --- THIS IS THE FORCED CHANGE --- */}
+        <h1>Greedy Calendar Optimizer v1.2</h1>
         
         {!isAuthenticated ? (
           <div className="card">
@@ -260,13 +243,14 @@ class App extends Component<{}, AppState> {
                     </button>
                 )}
             </div>
+
+            {message && (
+              <div className="card message-box">
+                <h3>Status</h3>
+                <p>{message}</p>
+              </div>
+            )}
           </>
-        )}
-        {message && (
-          <div className="card message-box">
-            <h3>Status</h3>
-            <p>{message}</p>
-          </div>
         )}
       </main>
     );
