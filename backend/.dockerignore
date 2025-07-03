@@ -1,0 +1,8 @@
+# Ignore development files and folders that shouldn't be in the final image
+node_modules
+npm-debug.log
+*.pem
+.env
+.gitignore
+Dockerfile
+.dockerignore

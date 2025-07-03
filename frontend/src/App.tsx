@@ -56,7 +56,7 @@ class App extends Component<{}, AppState> {
     }
   }
 
-  componentDidUpdate(prevProps: {}, prevState: AppState) {
+  componentDidUpdate(_prevProps: {}, prevState: AppState) {
     if (prevState.pendingEvents !== this.state.pendingEvents) {
       localStorage.setItem('pendingEvents', JSON.stringify(this.state.pendingEvents));
     }

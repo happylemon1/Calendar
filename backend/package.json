@@ -4,7 +4,7 @@
   "description": "Backend server for the Greedy Calendar Optimizer application.",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project .",
     "start": "npm run build && node dist/server.js",
     "dev": "nodemon --watch src/**/*.ts --exec npx ts-node src/server.ts"
   },
@@ -27,3 +27,4 @@
     "typescript": "^5.5.3"
   }
 }
+

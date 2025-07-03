@@ -10,28 +10,49 @@ import session from 'express-session';
 dotenv.config();
 
 const app: Express = express();
-const port: number = 8000;
+const port: number = parseInt(process.env.PORT as string) || 8000;
 
-app.use(cors({ origin: 'https://localhost:5173', credentials: true }));
+const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(session({
-    name: 'calendar-optimizer.sid', // Give the cookie a specific name
-    secret: process.env.SESSION_SECRET || 'super-secret-key-for-dev',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-      secure: true,
-      httpOnly: true, 
-      sameSite: 'none',
-      maxAge: 24 * 60 * 60 * 1000,
-    }
-}));
+if (!isProduction) {
+    app.use(cors({ origin: 'https://gibbsbijan.web.app', credentials: true }));
+
+    app.use(session({
+        name: 'calendar-optimizer.sid', // Give the cookie a specific name
+        secret: process.env.SESSION_SECRET || 'super-secret-key-for-dev',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { 
+        secure: true,
+        httpOnly: true, 
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000,
+        }
+    }));
+} else {
+    const productionFrontendURL = process.env.FRONTEND_URL; 
+    app.use(cors({ origin: productionFrontendURL, credentials: true })); 
+    app.use(session({
+        secret: process.env.SESSION_SECRET as string, 
+        resave: false, 
+        saveUninitialized: true, 
+        cookie: {
+            secure: true, 
+            httpOnly: true,
+            sameSite: 'none'
+        }
+    }))
+}
 
 app.use(express.json());
 
 const GOOGLE_CLIENT_ID: string | undefined = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET: string | undefined = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI: string = 'https://localhost:8000/api/google/callback';
+// const REDIRECT_URI: string = 'https://localhost:8000/api/google/callback';
+
+const REDIRECT_URI: string = isProduction 
+    ? `${process.env.BACKEND_URL}/api/google/callback`
+    : 'https://localhost:8000/api/google/callback';
 
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     console.error("CRITICAL ERROR: Missing Google OAuth credentials...");
@@ -81,8 +102,8 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
                 console.error('Error saving session:', err);
                 return res.status(500).send('Authentication failed during session save.');
             }
-            console.log(`[CALLBACK] Session saved successfully for ID: ${req.session.id}`);
-            res.redirect('https://localhost:5173/?authenticated=true');
+            const frontendUrl = isProduction ? process.env.FRONTEND_URL : 'https://localhost:5173';
+            res.redirect(`${frontendUrl}/?authenticated=true`);
         });
 
     } catch (error) {
@@ -91,7 +112,6 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
     }
 });
 
-// --- NEW: Logout Endpoint ---
 app.post('/api/logout', (req: Request, res: Response) => {
     req.session.destroy((err) => {
         if (err) {
@@ -105,10 +125,7 @@ app.post('/api/logout', (req: Request, res: Response) => {
 });
 
 app.post('/api/generate-schedule', async (req: Request<{}, {}, ScheduleRequest>, res: Response) => {
-    console.log(`[SCHEDULE] Request received. Session ID: ${req.session.id}`);
-    
     if (!req.session.credentials) {
-        console.error('[SCHEDULE] Error: No credentials found in session.');
         return res.status(401).json({ message: 'User is not authenticated' });
     }
     
@@ -210,11 +227,26 @@ function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Sche
     }
 }
 
-const httpsOptions = {
-  key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
-  cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
-};
+if (isProduction) {
+    app.listen(port, () => {
+        console.log(`✅ Backend server running securely in production on port ${port}`);
+    });
+} else {
+    const httpsOptions = {
+    key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
+    };
 
-https.createServer(httpsOptions, app).listen(port, () => {
-    console.log(`✅ Backend server running securely at https://localhost:${port}`);
-});
+    https.createServer(httpsOptions, app).listen(port, () => {
+        console.log(`✅ Backend server running securely at https://localhost:${port}`);
+    });
+}
+
+// const httpsOptions = {
+//   key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
+//   cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
+// };
+
+// https.createServer(httpsOptions, app).listen(port, () => {
+//     console.log(`✅ Backend server running securely at https://localhost:${port}`);
+// });
