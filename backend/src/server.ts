@@ -6,7 +6,6 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 import session from 'express-session';
-// --- NEW IMPORTS ---
 import { Firestore } from '@google-cloud/firestore';
 import { FirestoreStore } from '@google-cloud/connect-firestore';
 
@@ -16,9 +15,11 @@ const app: Express = express();
 const port: number = parseInt(process.env.PORT as string) || 8000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// --- NEW FIRESTORE SETUP ---
-// Initialize the Firestore client
-const firestore = new Firestore();
+// --- DEPLOYMENT FIX: Explicitly configure Firestore with the Project ID ---
+const firestore = new Firestore({
+    // This ensures the client connects to the correct database in any environment.
+    projectId: process.env.GCP_PROJECT_ID,
+});
 
 // Configure CORS
 const corsOptions = {
@@ -27,12 +28,10 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// --- UPDATED SESSION CONFIGURATION ---
-// We now pass a 'store' option to the session middleware.
+// Configure session management with Firestore
 app.use(session({
     store: new FirestoreStore({
         dataset: firestore,
-        // Optional: collection name for sessions, 'sessions' is default
         kind: 'express-sessions', 
     }),
     name: 'calendar-optimizer.sid',
@@ -43,21 +42,21 @@ app.use(session({
       secure: true,
       httpOnly: true,
       sameSite: 'none',
-      maxAge: 14 * 24 * 60 * 60 * 1000 // Keep session for 14 days
+      maxAge: 14 * 24 * 60 * 60 * 1000
     }
 }));
 
 app.use(express.json());
 
-// --- Google Calendar API Configuration (remains the same) ---
+// --- Google Calendar API Configuration ---
 const GOOGLE_CLIENT_ID: string | undefined = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET: string | undefined = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI: string = isProduction 
     ? `${process.env.BACKEND_URL}/api/google/callback` 
     : 'https://localhost:8000/api/google/callback';
 
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    console.error("CRITICAL ERROR: Missing Google OAuth credentials...");
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || (isProduction && !process.env.GCP_PROJECT_ID)) {
+    console.error("CRITICAL ERROR: Missing one or more required environment variables.");
     process.exit(1);
 }
 
@@ -228,12 +227,10 @@ function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Sche
 
 // --- Server Startup Logic ---
 if (isProduction) {
-    // In production, Cloud Run handles HTTPS termination. We run an HTTP server.
     app.listen(port, () => {
         console.log(`✅ Backend server running in production on port ${port}`);
     });
 } else {
-    // In development, we run our own HTTPS server.
     const httpsOptions = {
       key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
       cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
