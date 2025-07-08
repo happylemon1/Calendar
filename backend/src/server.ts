@@ -6,52 +6,54 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 import session from 'express-session';
+// --- NEW IMPORTS ---
+import { Firestore } from '@google-cloud/firestore';
+import { FirestoreStore } from '@google-cloud/connect-firestore';
 
 dotenv.config();
 
 const app: Express = express();
 const port: number = parseInt(process.env.PORT as string) || 8000;
-
 const isProduction = process.env.NODE_ENV === 'production';
 
-if (!isProduction) {
-    app.use(cors({ origin: 'https://gibbsbijan.web.app', credentials: true }));
+// --- NEW FIRESTORE SETUP ---
+// Initialize the Firestore client
+const firestore = new Firestore();
 
-    app.use(session({
-        name: 'calendar-optimizer.sid', // Give the cookie a specific name
-        secret: process.env.SESSION_SECRET || 'super-secret-key-for-dev',
-        resave: false,
-        saveUninitialized: false,
-        cookie: { 
-        secure: true,
-        httpOnly: true, 
-        sameSite: 'none',
-        maxAge: 24 * 60 * 60 * 1000,
-        }
-    }));
-} else {
-    const productionFrontendURL = process.env.FRONTEND_URL; 
-    app.use(cors({ origin: productionFrontendURL, credentials: true })); 
-    app.use(session({
-        secret: process.env.SESSION_SECRET as string, 
-        resave: false, 
-        saveUninitialized: false, 
-        cookie: {
-            secure: true, 
-            httpOnly: true,
-            sameSite: 'none'
-        }
-    }))
-}
+// Configure CORS
+const corsOptions = {
+    origin: isProduction ? process.env.FRONTEND_URL : 'https://localhost:5173',
+    credentials: true
+};
+app.use(cors(corsOptions));
+
+// --- UPDATED SESSION CONFIGURATION ---
+// We now pass a 'store' option to the session middleware.
+app.use(session({
+    store: new FirestoreStore({
+        dataset: firestore,
+        // Optional: collection name for sessions, 'sessions' is default
+        kind: 'express-sessions', 
+    }),
+    name: 'calendar-optimizer.sid',
+    secret: process.env.SESSION_SECRET || 'super-secret-key-for-dev',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure: true,
+      httpOnly: true,
+      sameSite: 'none',
+      maxAge: 14 * 24 * 60 * 60 * 1000 // Keep session for 14 days
+    }
+}));
 
 app.use(express.json());
 
+// --- Google Calendar API Configuration (remains the same) ---
 const GOOGLE_CLIENT_ID: string | undefined = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET: string | undefined = process.env.GOOGLE_CLIENT_SECRET;
-// const REDIRECT_URI: string = 'https://localhost:8000/api/google/callback';
-
 const REDIRECT_URI: string = isProduction 
-    ? `${process.env.BACKEND_URL}/api/google/callback`
+    ? `${process.env.BACKEND_URL}/api/google/callback` 
     : 'https://localhost:8000/api/google/callback';
 
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
@@ -65,7 +67,7 @@ const oauth2Client: Auth.OAuth2Client = new google.auth.OAuth2(
     REDIRECT_URI
 );
 
-// --- Type Interfaces ---
+// --- Type Interfaces & API Endpoints (remain the same) ---
 interface PendingEvent {
     id: number;
     name: string;
@@ -79,7 +81,6 @@ interface ScheduleRequest {
     workDayEnd: string;
 }
 
-// --- API Endpoints ---
 app.get('/api/auth', (req: Request, res: Response) => {
     const scopes: string[] = ['https://www.googleapis.com/auth/calendar'];
     const url: string = oauth2Client.generateAuthUrl({
@@ -96,7 +97,6 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
         const { tokens } = await oauth2Client.getToken(code as string);
         req.session.credentials = tokens;
         
-        // Explicitly save the session before redirecting
         req.session.save((err) => {
             if (err) {
                 console.error('Error saving session:', err);
@@ -117,7 +117,6 @@ app.post('/api/logout', (req: Request, res: Response) => {
         if (err) {
             return res.status(500).json({ message: 'Could not log out, please try again.' });
         }
-        // Clear the cookie from the user's browser
         res.clearCookie('calendar-optimizer.sid');
         console.log('Session destroyed and cookie cleared.');
         res.status(200).json({ message: 'Successfully logged out.' });
@@ -227,26 +226,19 @@ function findNextAvailableSlot(startTime: Date, existingEvents: calendar_v3.Sche
     }
 }
 
+// --- Server Startup Logic ---
 if (isProduction) {
+    // In production, Cloud Run handles HTTPS termination. We run an HTTP server.
     app.listen(port, () => {
-        console.log(`✅ Backend server running securely in production on port ${port}`);
+        console.log(`✅ Backend server running in production on port ${port}`);
     });
 } else {
+    // In development, we run our own HTTPS server.
     const httpsOptions = {
-    key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
+      key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
     };
-
     https.createServer(httpsOptions, app).listen(port, () => {
         console.log(`✅ Backend server running securely at https://localhost:${port}`);
     });
 }
-
-// const httpsOptions = {
-//   key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
-//   cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
-// };
-
-// https.createServer(httpsOptions, app).listen(port, () => {
-//     console.log(`✅ Backend server running securely at https://localhost:${port}`);
-// });
