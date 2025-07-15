@@ -1,9 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import { google, Auth, calendar_v3 } from 'googleapis';
 import dotenv from 'dotenv';
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
 import cors from 'cors';
 import session from 'express-session';
 
@@ -11,14 +8,15 @@ import session from 'express-session';
 dotenv.config();
 
 const app: Express = express();
-const port: number = parseInt(process.env.PORT || '8000', 10);
+const port = parseInt(process.env.PORT || '8000', 10);
 
 // 2. Base URLs from environment
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const BACKEND_URL = process.env.BACKEND_URL!;    // e.g. http(s)://localhost:8000 or your Cloud Run URL
-const FRONTEND_URL = process.env.FRONTEND_URL!;  // e.g. http://localhost:5173 or your deployed frontend URL
+type Env = 'development' | 'production';
+const NODE_ENV = (process.env.NODE_ENV as Env) || 'development';
+const BACKEND_URL = process.env.BACKEND_URL!;    // e.g. https://your-cloud-run-url
+const FRONTEND_URL = process.env.FRONTEND_URL!;  // e.g. https://your-frontend-url
 
-// 3. CORS
+// 3. CORS setup
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 // 4. Session config
@@ -27,8 +25,8 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: NODE_ENV === 'production',   // only HTTPS in prod
-        sameSite: 'none',                    // required for cross-site cookies
+        secure: NODE_ENV === 'production',
+        sameSite: 'none',
     }
 }));
 
@@ -51,7 +49,8 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 // 6. Auth endpoint
-app.get('/api/auth', (req: Request, res: Response) => {
+type AuthCodeRequest = Request<{}, {}, {}>;
+app.get('/api/auth', (req: AuthCodeRequest, res: Response) => {
     const scopes = ['https://www.googleapis.com/auth/calendar.events'];
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline',
@@ -90,9 +89,9 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
         const now = new Date();
         const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        // List existing events with retry
+        // events.list with retry
         let listResp;
-        for (let attempt = 1; ; ++attempt) {
+        for (let attempt = 1; ; attempt++) {
             try {
                 listResp = await calendar.events.list({
                     calendarId: 'primary',
@@ -105,7 +104,7 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
             } catch (err: any) {
                 console.error(`events.list attempt ${attempt} error:`, err.response?.data || err);
                 if (attempt >= 5 || err.code !== 503) throw err;
-                await new Promise(r => setTimeout(r, 2 ** attempt * 200));
+                await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 200));
             }
         }
 
@@ -122,7 +121,7 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
                 end: { dateTime: endSlot.toISOString(), timeZone: 'America/Los_Angeles' },
             };
 
-            for (let attempt = 1; ; ++attempt) {
+            for (let attempt = 1; ; attempt++) {
                 try {
                     const created = await calendar.events.insert({ calendarId: 'primary', requestBody: newEvt });
                     console.log(`✅ Created ${evt.name}:`, created.data.id);
@@ -132,7 +131,7 @@ app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, 
                 } catch (err: any) {
                     console.error(`insert ${evt.name} attempt ${attempt} error:`, err.response?.data || err);
                     if (attempt >= 5 || err.code !== 503) break;
-                    await new Promise(r => setTimeout(r, 2 ** attempt * 200));
+                    await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 200));
                 }
             }
         }
@@ -161,11 +160,7 @@ function findNextAvailableSlot(startTime: Date, existing: calendar_v3.Schema$Eve
     }
 }
 
-// 10. HTTPS server launch
-const httpsOptions = {
-    key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem'))
-};
-https.createServer(httpsOptions, app).listen(port, () => {
-    console.log(`🚀 Secure server listening on ${BACKEND_URL}`);
+// 10. HTTP server launch (Cloud Run handles TLS)
+app.listen(port, () => {
+    console.log(`🚀 Server listening on ${BACKEND_URL}`);
 });
