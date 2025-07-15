@@ -1,9 +1,11 @@
-import React, { Component } from 'react'; // 1. Import Component
+import React, { Component } from 'react';
 import './App.css';
 
-// --- Define Types and Interfaces ---
+// --- PRODUCTION BACKEND URL ---
+const API_BASE_URL = "https://calendar-optimizer-backend-688154466351.us-central1.run.app";
 
-// This interface defines the expected shape of our component's state
+// --- Types and Interfaces ---
+
 type AppState = {
   isAuthenticated: boolean,
   eventName: string,
@@ -27,9 +29,8 @@ interface PendingEvent {
 }
 
 // --- The Class Component ---
-class App extends Component<{}, AppState> { // 2. Extend React.Component
+class App extends Component<{}, AppState> {
 
-  // 3. The constructor is where you initialize state
   constructor(props: {}) {
     super(props);
     this.state = {
@@ -47,14 +48,12 @@ class App extends Component<{}, AppState> { // 2. Extend React.Component
     // Check the page's URL for our ?authenticated=true flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('authenticated') === 'true') {
-      // If the flag is found, update our state. This will trigger a re-render.
       this.setState({ isAuthenticated: true });
     }
   }
 
-  // 4. Component logic is written as class methods
   handleSignIn = () => {
-    window.location.href = 'https://localhost:8000/api/auth';
+    window.location.href = `${API_BASE_URL}/api/auth`;
   };
 
   handleAddEvent = (e: React.FormEvent<HTMLFormElement>) => {
@@ -85,12 +84,11 @@ class App extends Component<{}, AppState> { // 2. Extend React.Component
     this.setState({ message: 'Generating schedule for all events...', lastScheduledEvent: null });
 
     try {
-      const response = await fetch('https://localhost:8000/api/generate-schedule', {
+      const response = await fetch(`${API_BASE_URL}/api/generate-schedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-
         body: JSON.stringify(this.state.pendingEvents),
         credentials: 'include',
       });
