@@ -1,12 +1,24 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'; // 1. Import Component
 import './App.css';
 
-// --- DEPLOYMENT FIX: Define the API URL at the top level ---
-// import.meta.env.PROD is true only when running 'npm run build'
-const isProduction = import.meta.env.PROD;
-const API_BASE_URL = isProduction ? import.meta.env.VITE_API_URL : 'https://localhost:8000';
-
 // --- Define Types and Interfaces ---
+
+// This interface defines the expected shape of our component's state
+type AppState = {
+  isAuthenticated: boolean,
+  eventName: string,
+  priority: string,
+  duration: string,
+  pendingEvents: PendingEvent[],
+  message: string,
+  lastScheduledEvent: ScheduledEvent | null,
+}
+
+type ScheduledEvent = {
+  name: string,
+  startTime: string,
+}
+
 interface PendingEvent {
   id: number;
   name: string;
@@ -14,20 +26,10 @@ interface PendingEvent {
   priority: number;
 }
 
-interface AppState {
-  isAuthenticated: boolean;
-  eventName: string;
-  priority: string;
-  duration: string;
-  workingHoursStart: string;
-  workingHoursEnd: string;
-  pendingEvents: PendingEvent[];
-  message: string;
-}
-
 // --- The Class Component ---
-class App extends Component<{}, AppState> {
+class App extends Component<{}, AppState> { // 2. Extend React.Component
 
+  // 3. The constructor is where you initialize state
   constructor(props: {}) {
     super(props);
     this.state = {
@@ -35,54 +37,31 @@ class App extends Component<{}, AppState> {
       eventName: '',
       priority: '',
       duration: '',
-      workingHoursStart: '09:00',
-      workingHoursEnd: '17:00',
       pendingEvents: [],
       message: '',
+      lastScheduledEvent: null,
     };
   }
 
   componentDidMount() {
-    // --- DEPLOYMENT FIX: Add a log to see the URL in the browser console ---
-    console.log('Application starting with API_BASE_URL:', API_BASE_URL);
-    if (!API_BASE_URL && isProduction) {
-        console.error("CRITICAL: VITE_API_URL is not defined in the production build!");
-    }
-
+    // Check the page's URL for our ?authenticated=true flag
     const urlParams = new URLSearchParams(window.location.search);
-    const justAuthenticated = urlParams.get('authenticated') === 'true';
-
-    if (justAuthenticated) {
-      localStorage.setItem('isAuthenticated', 'true');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    if (localStorage.getItem('isAuthenticated') === 'true') {
+    if (urlParams.get('authenticated') === 'true') {
+      // If the flag is found, update our state. This will trigger a re-render.
       this.setState({ isAuthenticated: true });
     }
-
-    const savedPendingEvents = localStorage.getItem('pendingEvents');
-    if (savedPendingEvents) {
-      this.setState({ pendingEvents: JSON.parse(savedPendingEvents) });
-    }
   }
 
-  componentDidUpdate(_prevProps: {}, prevState: AppState) {
-    if (prevState.pendingEvents !== this.state.pendingEvents) {
-      localStorage.setItem('pendingEvents', JSON.stringify(this.state.pendingEvents));
-    }
-  }
-
+  // 4. Component logic is written as class methods
   handleSignIn = () => {
-    window.location.href = `${API_BASE_URL}/api/auth`;
+    window.location.href = 'https://localhost:8000/api/auth';
   };
-  
+
   handleAddEvent = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { eventName, duration, priority, pendingEvents } = this.state;
-
     if (!eventName || !duration || !priority || Number(duration) <= 0) {
-      this.setState({ message: "Please fill out all event fields with a valid duration." });
+      this.setState({ message: "Please fill out all event fields and input valid values." })
       return;
     }
 
@@ -91,42 +70,41 @@ class App extends Component<{}, AppState> {
       name: eventName,
       duration: Number(duration),
       priority: Number(priority),
-    };
+    }
 
     this.setState({
       pendingEvents: [...pendingEvents, newEvent],
       eventName: '',
       duration: '',
       priority: '',
-      message: `'${newEvent.name}' has been added to the queue.`
-    });
-  };
+      message: `${newEvent.name} has been added to the queue.`
+    })
+  }
 
   handleGenerateSchedule = async () => {
-    this.setState({ message: 'Generating schedule for all events...' });
+    this.setState({ message: 'Generating schedule for all events...', lastScheduledEvent: null });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/generate-schedule`, {
+      const response = await fetch('https://localhost:8000/api/generate-schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          events: this.state.pendingEvents,
-          workDayStart: this.state.workingHoursStart,
-          workDayEnd: this.state.workingHoursEnd,
-        }),
+
+        body: JSON.stringify(this.state.pendingEvents),
         credentials: 'include',
       });
 
       const data = await response.json();
-      if (!response.ok) { throw new Error(data.message || 'An unknown error occurred.'); }
+      if (!response.ok) {
+        throw new Error(data.message || 'An unknown error occurred.');
+      }
 
       this.setState({
         pendingEvents: [],
         message: `Success! ${data.scheduledCount} events have been added to your calendar.`,
+        lastScheduledEvent: null,
       });
-
     } catch (error) {
       if (error instanceof Error) {
         this.setState({ message: `Error: ${error.message}` });
@@ -135,66 +113,49 @@ class App extends Component<{}, AppState> {
   };
 
   render() {
-    const { isAuthenticated, eventName, duration, priority, pendingEvents, message, workingHoursStart, workingHoursEnd } = this.state;
+    const { isAuthenticated, eventName, duration, priority, pendingEvents, message } = this.state;
 
     return (
       <main className="container">
-        {/* --- THIS IS THE FORCED CHANGE --- */}
-        <h1>Greedy Calendar Optimizer v1.2</h1>
-        
+        <h1> Calendar Optimizer </h1>
+
         {!isAuthenticated ? (
           <div className="card">
-            <h2>1. Sign In</h2>
+            <h2>1. Sign In </h2>
             <p>
-              Begin by signing in with your Google Account. This allows the application
-              to securely access your calendar and find available time slots.
+              Begin by signing in with your Google Account to allow the application to
+              securely access your calendar and find available time slots.
             </p>
             <button onClick={this.handleSignIn}>Sign in with Google</button>
           </div>
         ) : (
           <>
-            <div className="card">
-                <h2>Scheduling Constraints</h2>
-                <div className="constraints-grid">
-                    <div className="form-group">
-                        <label htmlFor="workDayStart">Work Day Start Time:</label>
-                        <input 
-                            id="workDayStart"
-                            type="time"
-                            value={workingHoursStart}
-                            onChange={(e) => this.setState({ workingHoursStart: e.target.value })}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="workDayEnd">Work Day End Time:</label>
-                        <input 
-                            id="workDayEnd"
-                            type="time"
-                            value={workingHoursEnd}
-                            onChange={(e) => this.setState({ workingHoursEnd: e.target.value })}
-                        />
-                    </div>
-                </div>
-            </div>
 
             <div className="card">
               <h2>Add Events to Schedule</h2>
               <form onSubmit={this.handleAddEvent}>
                 <div className="form-group">
-                  <label htmlFor="eventName">Event Name:</label>
-                  <input id="eventName" type="text" value={eventName} onChange={(e) => this.setState({ eventName: e.target.value })} placeholder="e.g., Study for exam" required />
+                  <label htmlFor="eventName"> Event Name: </label>
+                  <input
+                    id="eventName"
+                    type="text"
+                    value={eventName}
+                    onChange={(e) => this.setState({ eventName: e.target.value })}
+                    placeholder="e.g., Study for exam"
+                    required
+                  />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="duration">Duration (in minutes):</label>
-                  <input 
-                    id="duration" 
-                    type="number" 
-                    value={duration} 
-                    onChange={(e) => this.setState({ duration: e.target.value })} 
-                    placeholder="e.g., 40"
+                  <input
+                    id="duration"
+                    type="number"
+                    value={duration}
+                    onChange={(e) => this.setState({ duration: e.target.value })}
+                    placeholder="e.g. 30"
                     min="1"
-                    required 
+                    required
                   />
                 </div>
 
@@ -202,11 +163,11 @@ class App extends Component<{}, AppState> {
                   <label htmlFor="priority">Priority Level:</label>
                   <select id="priority" value={priority} onChange={(e) => this.setState({ priority: e.target.value })} required>
                     <option value="" disabled>Select a priority...</option>
-                    <option value="5">5 (Highest)</option>
+                    <option value="5">5 (Highest) </option>
                     <option value="4">4</option>
-                    <option value="3">3 (Medium)</option>
+                    <option value="3">3</option>
                     <option value="2">2</option>
-                    <option value="1">1 (Lowest)</option>
+                    <option value="1">1</option>
                   </select>
                 </div>
                 <button type="submit">Add Event to Queue</button>
@@ -214,34 +175,35 @@ class App extends Component<{}, AppState> {
             </div>
 
             <div className="card">
-                <h2>Pending Events Queue</h2>
-                {pendingEvents.length === 0 ? (
-                    <p>No events have been added yet.</p>
-                ) : (
-                    <table className="events-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Duration</th>
-                                <th>Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pendingEvents.map(event => (
-                                <tr key={event.id}>
-                                    <td>{event.name}</td>
-                                    <td>{event.duration} mins</td>
-                                    <td>{event.priority}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-                {pendingEvents.length > 0 && (
-                     <button className="generate-button" onClick={this.handleGenerateSchedule}>
-                        Generate Schedule for {pendingEvents.length} Events
-                    </button>
-                )}
+              <h2>Pending Events Queue</h2>
+              {pendingEvents.length === 0 ? (
+                <p>No events have been added yet.</p>
+              ) : (
+                <table className="events-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Duration</th>
+                      <th>Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingEvents.map(event => (
+                      <tr key={event.id}>
+                        <td>{event.name}</td>
+                        <td>{event.duration} mins</td>
+                        <td>{event.priority}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {pendingEvents.length > 0 && (
+                <button className="generate-button" onClick={this.handleGenerateSchedule}>
+                  Generate Schedule for {pendingEvents.length} Events
+                </button>
+              )}
             </div>
 
             {message && (
@@ -253,7 +215,7 @@ class App extends Component<{}, AppState> {
           </>
         )}
       </main>
-    );
+    )
   }
 }
 
