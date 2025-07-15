@@ -10,6 +10,9 @@ dotenv.config();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '8000', 10);
 
+// enable trust proxy so secure cookies work behind Cloud Run's HTTPS terminator
+app.set('trust proxy', 1);
+
 // 2. Base URLs from environment
 type Env = 'development' | 'production';
 const NODE_ENV = (process.env.NODE_ENV as Env) || 'development';
@@ -76,7 +79,9 @@ app.get('/api/google/callback', async (req: Request, res: Response) => {
 // 8. Schedule generation endpoint
 type PendingEvent = { id: number; name: string; duration: number; priority: number; };
 app.post('/api/generate-schedule', async (req: Request<{}, {}, PendingEvent[]>, res: Response) => {
-    console.log('🔒 Session creds present?', !!req.session.credentials);
+    // debug incoming cookies
+    console.log('🍪 Incoming Cookie header:', req.headers.cookie);
+    console.log('🔒 Session credentials present?', !!req.session.credentials);
     if (!req.session.credentials) {
         return res.status(401).json({ message: 'User not authenticated' });
     }
