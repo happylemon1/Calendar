@@ -1,6 +1,6 @@
 # Calendar Optimizer 🗓️✨
 
-A full-stack web application that automatically finds free time in your Google Calendar and schedules a list of tasks for you. Simply provide a list of tasks with their duration and priority, and let this tool intelligently place them in the next available slots, starting with your highest priority items first.
+A web application that automatically finds free time in your Google Calendar, working around fixed events, and schedules a user-provided list of tasks. Simply enter a desired quantity of pending tasks with their duration and priority, and this tool places them in the next available slots, starting with your highest priority items first using a greedy algorithm.
 
 ***
 
@@ -8,7 +8,7 @@ A full-stack web application that automatically finds free time in your Google C
 
 -   **Secure Google Authentication**: Uses the official Google OAuth 2.0 flow to securely access your calendar data. Credentials are never stored long-term.
 -   **Dynamic Event Queue**: Add multiple events with custom names, durations (in minutes), and priority levels (1-5).
--   **Intelligent Scheduling**: The backend algorithm fetches your existing calendar events for the next 7 days to identify free time slots.
+-   **Intelligent Scheduling**: The backend algorithm fetches your existing calendar events to identify free time slots.
 -   **Priority-First Algorithm**: Events you mark with a higher priority are scheduled first, ensuring your most important tasks get a spot.
 -   **Automatic Scheduling**: With a single click, all pending events are processed and added to your primary Google Calendar.
 -   **Clear User Feedback**: The interface provides real-time status updates, from adding an event to the queue to confirming the final schedule generation.
@@ -75,7 +75,7 @@ You must create Google API credentials for the application to work.
 4.  Go to **APIs & Services** -> **Credentials**.
 5.  Click **+ CREATE CREDENTIALS** and select **OAuth client ID**.
 6.  Choose **Web application** as the application type.
-7.  Under **Authorized JavaScript origins**, add `http://localhost:3000`.
+7.  Under **Authorized JavaScript origins**, add `http://localhost:5000`.
 8.  Under **Authorized redirect URIs**, add `http://localhost:8000/api/google/callback`.
 9.  Click **Create**. Copy the **Client ID** and **Client Secret** for the next step.
 
@@ -152,4 +152,4 @@ Now, you can start the frontend React app:
 npm start
 ```
 
-Your browser should open to `http://localhost:3000`, and you can begin using the application!
+Your browser should open to `http://localhost:5000`, and you can begin using the application!
